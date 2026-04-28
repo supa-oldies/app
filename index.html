@@ -89,6 +89,12 @@ td.td-team{text-align:left;padding-left:16px;min-width:160px;}
 .form-legend{display:flex;gap:14px;align-items:center;padding:10px 16px;font-size:0.72rem;color:var(--muted);letter-spacing:1px;}
 .legend-item{display:flex;align-items:center;gap:5px;}
 .legend-dot{width:14px;height:14px;border-radius:50%;}
+/* ── ZONE LINES ── */
+tr.zone-promo-border td { border-bottom: 2px dashed rgba(46,204,113,0.55) !important; }
+tr.zone-releg-border td { border-bottom: 2px dashed rgba(231,76,60,0.55) !important; }
+.zone-legend-line { display:inline-block; width:24px; height:2px; border-top:2px dashed; vertical-align:middle; }
+.promo-line { border-color: rgba(46,204,113,0.8); }
+.releg-line { border-color: rgba(231,76,60,0.8); }
 
 /* ── RESULTS ── */
 .results-list{display:flex;flex-direction:column;gap:8px;}
@@ -114,6 +120,7 @@ td.td-team{text-align:left;padding-left:16px;min-width:160px;}
 .fixtures-section{margin-bottom:28px;}
 .fixture-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;padding:10px 16px;gap:12px;animation:fadeUp 0.2s ease;}
 .fixture-vs{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 14px;font-family:'Teko',sans-serif;font-size:1rem;color:var(--muted);white-space:nowrap;flex-shrink:0;letter-spacing:2px;}
+.fix-meta{color:var(--muted);font-size:0.72rem;flex-shrink:0;white-space:nowrap;}
 .fixture-team{flex:1;font-weight:700;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fixture-team.home{text-align:right;}.fixture-team.away{text-align:left;}
 .fixtures-empty{text-align:left;padding:30px 0;color:var(--muted);font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;}
@@ -194,8 +201,8 @@ input[type="number"]{text-align:center;}
   <div class="division-bar-inner">
     <button class="div-tab active" data-div="prem"  onclick="setDiv('prem',this)"><span class="dot"></span>Premier League</button>
     <button class="div-tab"        data-div="champ" onclick="setDiv('champ',this)"><span class="dot"></span>Championship</button>
-    <button class="div-tab"        data-div="div1"  onclick="setDiv('div1',this)"><span class="dot"></span>Division One</button>
-    <button class="div-tab"        data-div="div2"  onclick="setDiv('div2',this)"><span class="dot"></span>Division Two</button>
+    <button class="div-tab"        data-div="div1"  onclick="setDiv('div1',this)"><span class="dot"></span>League One</button>
+    <button class="div-tab"        data-div="div2"  onclick="setDiv('div2',this)"><span class="dot"></span>League Two</button>
   </div>
 </div>
 
@@ -240,8 +247,8 @@ input[type="number"]{text-align:center;}
           <select id="team-div-select">
             <option value="prem">Premier League</option>
             <option value="champ">Championship</option>
-            <option value="div1">Division One</option>
-            <option value="div2">Division Two</option>
+            <option value="div1">League One</option>
+            <option value="div2">League Two</option>
           </select>
         </div>
         <div class="add-team-row">
@@ -259,8 +266,8 @@ input[type="number"]{text-align:center;}
           <select id="result-div-select" onchange="refreshResultSelects()">
             <option value="prem">Premier League</option>
             <option value="champ">Championship</option>
-            <option value="div1">Division One</option>
-            <option value="div2">Division Two</option>
+            <option value="div1">League One</option>
+            <option value="div2">League Two</option>
           </select>
         </div>
         <div class="score-row">
@@ -288,8 +295,8 @@ input[type="number"]{text-align:center;}
           <select id="fix-div-select" onchange="refreshFixtureSelects()">
             <option value="prem">Premier League</option>
             <option value="champ">Championship</option>
-            <option value="div1">Division One</option>
-            <option value="div2">Division Two</option>
+            <option value="div1">League One</option>
+            <option value="div2">League Two</option>
           </select>
         </div>
         <div class="score-row">
@@ -305,6 +312,16 @@ input[type="number"]{text-align:center;}
           <label>Date / Time (optional)</label>
           <input type="text" id="fix-datetime" placeholder="e.g. Sat 14 Jun · 10:00am">
         </div>
+        <div class="score-row">
+          <div class="form-group">
+            <label>Pitch No.</label>
+            <input type="text" id="fix-pitch" placeholder="e.g. 3" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Referee</label>
+            <input type="text" id="fix-referee" placeholder="e.g. J. Smith" maxlength="30">
+          </div>
+        </div>
         <button class="btn" onclick="addFixture()">Add Fixture</button>
       </div>
 
@@ -316,8 +333,8 @@ input[type="number"]{text-align:center;}
           <select id="fix-manage-div" onchange="renderAdminFixtures()">
             <option value="prem">Premier League</option>
             <option value="champ">Championship</option>
-            <option value="div1">Division One</option>
-            <option value="div2">Division Two</option>
+            <option value="div1">League One</option>
+            <option value="div2">League Two</option>
           </select>
         </div>
         <div id="fixture-admin-list"></div>
@@ -355,8 +372,8 @@ const db  = getDatabase(app);
 const DIVS = {
   prem:{label:'Premier League',short:'PL'},
   champ:{label:'Championship',short:'CH'},
-  div1:{label:'Division One',short:'D1'},
-  div2:{label:'Division Two',short:'D2'},
+  div1:{label:'League One',short:'D1'},
+  div2:{label:'League Two',short:'D2'},
 };
 
 let state = {teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{}};
@@ -529,11 +546,15 @@ window.addFixture=function(){
   const away=document.getElementById('fix-away-team').value;
   const mw=parseInt(document.getElementById('fix-match-week').value)||null;
   const dt=document.getElementById('fix-datetime').value.trim();
+  const pitch=document.getElementById('fix-pitch').value.trim();
+  const referee=document.getElementById('fix-referee').value.trim();
   if(!home||!away){toast('SELECT BOTH TEAMS');return;}
   if(home===away){toast('SAME TEAM SELECTED');return;}
-  pushFixture({div,home,away,matchWeek:mw,datetime:dt||null});
+  pushFixture({div,home,away,matchWeek:mw,datetime:dt||null,pitch:pitch||null,referee:referee||null});
   document.getElementById('fix-match-week').value='';
   document.getElementById('fix-datetime').value='';
+  document.getElementById('fix-pitch').value='';
+  document.getElementById('fix-referee').value='';
   toast('FIXTURE ADDED');
 };
 window.deleteFixture=function(key){
@@ -553,6 +574,8 @@ function renderAdminFixtures(){
       <span class="fa-teams">${esc(f.home)} <span style="color:var(--muted)">vs</span> ${esc(f.away)}</span>
       ${f.matchWeek?`<span class="fa-week">WK ${f.matchWeek}</span>`:''}
       ${f.datetime?`<span style="color:var(--muted);font-size:0.75rem">${esc(f.datetime)}</span>`:''}
+      ${f.pitch?`<span style="color:var(--muted);font-size:0.75rem">Pitch ${esc(f.pitch)}</span>`:''}
+      ${f.referee?`<span style="color:var(--muted);font-size:0.75rem">Ref: ${esc(f.referee)}</span>`:''}
       <button class="btn-del" onclick="deleteFixture('${f._key}')">DEL</button>
     </div>`).join('')+'</div>';
 }
@@ -592,6 +615,11 @@ function renderTable(){
   const rows=calcTable(currentDiv);
   const c=document.getElementById('panel-table');
   const medals=['🥇','🥈','🥉'];
+  const total=rows.length;
+  // Promotion line: after position 1 on champ/div1/div2 (only when ≥2 teams)
+  const showPromo = currentDiv!=='prem' && total>=2;
+  // Relegation line: after position 9 on all divs (only when ≥10 teams)
+  const showReleg = total>=10;
   if(!(state.teams[currentDiv]||[]).length){
     c.innerHTML=`<div class="div-banner" data-div="${currentDiv}"><div><div class="div-banner-title">${DIVS[currentDiv].label}</div><div class="div-banner-sub">Six-A-Side</div></div></div><div class="table-wrap"><div class="empty-state">No teams yet — add teams in Admin</div></div>`;
     return;
@@ -615,7 +643,11 @@ function renderTable(){
             const gdStr=t.gd>0?'+'+t.gd:t.gd;
             const formHTML=form.map(f=>`<div class="form-pip ${f}">${f==='blank'?'':f}</div>`).join('');
             const prefix=i<3?`<span style="margin-right:4px">${medals[i]}</span>`:'';
-            return `<tr>
+            // Border classes for zone lines
+            const promoLine = showPromo && i===0 ? 'zone-promo-border' : '';
+            const relegLine = showReleg && i===8 ? 'zone-releg-border' : '';
+            const rowClass = [promoLine, relegLine].filter(Boolean).join(' ');
+            return `<tr class="${rowClass}">
               <td class="td-team"><span class="team-pos">${i+1}</span>${prefix}<span class="team-name">${esc(t.name)}</span></td>
               <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
               <td>${t.gf}</td><td>${t.ga}</td>
@@ -631,6 +663,8 @@ function renderTable(){
         <span class="legend-item"><span class="legend-dot" style="background:var(--win)"></span>Win</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--draw)"></span>Draw</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--loss)"></span>Loss</span>
+        ${showPromo?'<span class="legend-item"><span class="zone-legend-line promo-line"></span>Promotion</span>':''}
+        ${showReleg?'<span class="legend-item"><span class="zone-legend-line releg-line"></span>Relegation</span>':''}
       </div>
     </div>`;
 }
@@ -668,6 +702,8 @@ function renderFixtures(){
                   <div class="fixture-team away">${esc(f.away)}</div>
                 </div>
                 ${f.datetime?`<span class="res-date">${esc(f.datetime)}</span>`:''}
+                ${f.pitch?`<span class="fix-meta">⬡ Pitch ${esc(f.pitch)}</span>`:''}
+                ${f.referee?`<span class="fix-meta">🏴 ${esc(f.referee)}</span>`:''}
               </div>`).join('')}
           </div>
         </div>`).join('')}
