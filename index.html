@@ -244,7 +244,7 @@ const DIVS={
   div2:{label:"League Two",short:"L2"},
 };
 
-let state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{}};
+let state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{},logos:{}};
 function setLoading(on){document.getElementById("loading-overlay").style.display=on?"flex":"none";}
 function saveTeams(){set(ref(db,"state/teams"),state.teams);}
 function pushResult(r){push(ref(db,"state/results"),r);}
@@ -253,6 +253,13 @@ function pushFixture(f){push(ref(db,"state/fixtures"),f);}
 function deleteFixtureFromDB(k){remove(ref(db,"state/fixtures/"+k));}
 function resultsArray(){if(!state.results)return[];return Object.entries(state.results).map(([k,v])=>({...v,_key:k}));}
 function fixturesArray(){if(!state.fixtures)return[];return Object.entries(state.fixtures).map(([k,v])=>({...v,_key:k}));}
+function encodeKey(s){return encodeURIComponent(s).replace(/[.]/g,"%2E");}
+function teamAvatar(name,size){
+  size=size||22;
+  var logo=state.logos&&state.logos[encodeKey(name)];
+  if(logo) return '<img src="'+logo+'" alt="'+esc(name)+'" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);vertical-align:middle;margin-right:5px;">';
+  return '<span style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:var(--primary);color:#fff;font-size:'+Math.round(size*0.45)+'px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase;vertical-align:middle;margin-right:5px;">'+esc(name.charAt(0))+'</span>';
+}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2000);}
 
@@ -266,7 +273,7 @@ onValue(ref(db,"state"),(snapshot)=>{
     const rows=calcTableFrom(state,div);
     rows.forEach((t,i)=>{prevPositions[div][t.name]=i+1;});
   }
-  if(data){state.teams=data.teams||{prem:[],champ:[],div1:[],div2:[]};state.results=data.results||{};state.fixtures=data.fixtures||{};}
+  if(data){state.teams=data.teams||{prem:[],champ:[],div1:[],div2:[]};state.results=data.results||{};state.fixtures=data.fixtures||{};state.logos=data.logos||{};}
   else{state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{}};}
   setLoading(false);render();
 });
@@ -354,7 +361,7 @@ function renderTable(){
             else if(curPos<oldPos)arrow=`<span class="arrow-up">▲ ${oldPos-curPos}</span>`;
             else arrow=`<span class="arrow-down">▼ ${curPos-oldPos}</span>`;
             return `<tr class="${rowClass}">
-              <td class="td-team"><span class="team-pos">${curPos}</span>${prefix}<span class="team-name">${esc(t.name)}</span></td>
+              <td class="td-team"><span class="team-pos">${curPos}</span>${prefix}${teamAvatar(t.name,22)}<span class="team-name">${esc(t.name)}</span></td>
               <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
               <td>${t.gf}</td><td>${t.ga}</td>
               <td class="${gdClass}">${gdStr}</td>
@@ -436,11 +443,11 @@ function renderResults(){
           <div class="result-row">
             <span class="res-div-badge" data-div="${r.div}">${DIVS[r.div].short}</span>
             <div class="res-teams">
-              <div class="res-team home ${r.hg>r.ag?'winner':''}">${esc(r.home)}</div>
+              <div class="res-team home ${r.hg>r.ag?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.home,20)}${esc(r.home)}</div>
               ${r.hg>r.ag?'<span class="res-chevron">&#10095;</span>':r.ag>r.hg?'<span class="res-chevron" style="visibility:hidden">&#10095;</span>':''}
               <div class="res-score">${r.hg} – ${r.ag}</div>
               ${r.ag>r.hg?'<span class="res-chevron">&#10094;</span>':r.hg>r.ag?'<span class="res-chevron" style="visibility:hidden">&#10094;</span>':''}
-              <div class="res-team away ${r.ag>r.hg?'winner':''}">${esc(r.away)}</div>
+              <div class="res-team away ${r.ag>r.hg?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.away,20)}${esc(r.away)}</div>
             </div>
             <span class="res-date">${r.date}</span>
           </div>`).join("")}
