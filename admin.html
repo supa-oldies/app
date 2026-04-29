@@ -131,6 +131,28 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
 .loading-text{font-size:0.78rem;color:var(--muted-fg);letter-spacing:0.08em;text-transform:uppercase;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
 .fade-in{animation:fadeIn 0.2s ease;}
+
+/* ── SEASON ── */
+.season-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.season-card-title{font-size:0.82rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted-fg);padding-bottom:10px;border-bottom:1px solid var(--border);}
+.preview-div-block{background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.preview-div-header{padding:8px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff;}
+.preview-div-header[data-div="prem"]{background:var(--prem-bg);color:var(--prem-fg);}
+.preview-div-header[data-div="champ"]{background:var(--champ-bg);color:var(--champ-fg);}
+.preview-div-header[data-div="div1"]{background:var(--d1-bg);color:var(--d1-fg);}
+.preview-div-header[data-div="div2"]{background:var(--d2-bg);color:var(--d2-fg);}
+.preview-team-row{display:flex;align-items:center;gap:8px;padding:7px 14px;background:#fff;border-bottom:1px solid var(--border);font-size:0.84rem;font-weight:500;}
+.preview-team-row:last-child{border-bottom:none;}
+.move-badge{font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:9999px;white-space:nowrap;flex-shrink:0;}
+.move-badge.up{background:#dcfce7;color:#15803d;}
+.move-badge.down{background:#fef2f2;color:#dc2626;}
+.move-badge.stay{background:var(--muted);color:var(--muted-fg);}
+.move-btn{background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.7rem;cursor:pointer;color:var(--muted-fg);transition:all 0.15s;flex-shrink:0;}
+.move-btn:hover{border-color:var(--primary);color:var(--primary);}
+.archived-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:0.84rem;}
+.archived-row:last-child{border-bottom:none;}
+.archived-label{font-weight:600;}
+.archived-date{font-size:0.72rem;color:var(--muted-fg);}
 @media(max-width:900px){.teams-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:600px){
   :root{--pad:0.875rem;}
@@ -171,6 +193,7 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
       <button class="admin-tab active" onclick="setAdminTab('teams',this)">Teams</button>
       <button class="admin-tab"        onclick="setAdminTab('results',this)">Results</button>
       <button class="admin-tab"        onclick="setAdminTab('fixtures',this)">Fixtures</button>
+      <button class="admin-tab"        onclick="setAdminTab('season',this)">Season</button>
     </div>
   </div>
   <div class="content-area">
@@ -248,10 +271,55 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
       </div>
     </div>
 
+    <!-- SEASON -->
+    <div class="panel" id="admin-panel-season">
+      <div class="page-header"><div class="page-title">Season Management</div></div>
+
+      <!-- Current season card -->
+      <div class="season-card">
+        <div class="season-card-title">Current Season</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+          <input type="text" id="season-name-input" placeholder="e.g. Winter 2026" style="max-width:260px;background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;flex:1;">
+          <button class="btn-sm" onclick="saveSeasonName()" style="height:36px;padding:0 18px;">Save name</button>
+        </div>
+        <div id="current-season-display" style="margin-top:8px;font-size:0.78rem;color:var(--muted-fg);"></div>
+      </div>
+
+      <!-- New season card -->
+      <div class="season-card" style="margin-top:16px;">
+        <div class="season-card-title">Start New Season</div>
+        <p style="font-size:0.82rem;color:var(--muted-fg);margin:8px 0 14px;">Archives the current season, calculates promotions &amp; demotions, then lets you review and confirm before anything changes.</p>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <input type="text" id="new-season-name-input" placeholder="e.g. Summer 2026" style="max-width:260px;background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;flex:1;">
+          <button class="btn-sm" onclick="previewNewSeason()" style="height:36px;padding:0 18px;background:#1a1a2e;">Preview moves</button>
+        </div>
+      </div>
+
+      <!-- Past seasons card -->
+      <div class="season-card" style="margin-top:16px;">
+        <div class="season-card-title">Archived Seasons</div>
+        <div id="archived-seasons-list" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- Hidden file input for logo uploads -->
+<!-- Season preview modal -->
+<div id="season-preview-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:10px;padding:24px;max-width:580px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:1rem;font-weight:700;">Review moves for <span id="preview-season-label" style="color:var(--primary)"></span></div>
+      <button onclick="closeSeasonPreview()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--muted-fg);">✕</button>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted-fg);margin-bottom:16px;">Review and adjust team movements. Drag teams between divisions or use the move buttons. Changes only apply when you click <strong>Confirm &amp; Start Season</strong>.</p>
+    <div id="preview-divisions"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeSeasonPreview()" style="background:none;border:1px solid var(--border);border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;cursor:pointer;">Cancel</button>
+      <button onclick="confirmNewSeason()" style="background:var(--primary);color:#fff;border:none;border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Confirm &amp; Start Season</button>
+    </div>
+  </div>
+</div>
 <input type="file" class="logo-input" id="logo-file-input" accept="image/*">
 
 <div class="toast" id="toast"></div>
@@ -277,6 +345,8 @@ const DIVS={prem:"Premier League",champ:"Championship",div1:"League One",div2:"L
 const DIV_KEYS=["prem","champ","div1","div2"];
 
 let state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{},logos:{}};
+let currentSeasonName="";
+let archivedSeasons={};
 let resultsFilter="all", fixturesFilter="all", currentAdminTab="teams";
 let pendingLogoTeam=null;
 
@@ -311,13 +381,17 @@ onValue(ref(db,"state"),(snapshot)=>{
     state.results=data.results||{};
     state.fixtures=data.fixtures||{};
     state.logos  =data.logos  ||{};
+    currentSeasonName=data.currentSeason||"";
+    archivedSeasons=data.seasons||{};
   } else {
     state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{},logos:{}};
+    currentSeasonName=""; archivedSeasons={};
   }
   setLoading(false);
   if(currentAdminTab==="teams") renderTeams();
   if(currentAdminTab==="results") renderResultsTable();
   if(currentAdminTab==="fixtures") renderFixturesTable();
+  if(currentAdminTab==="season") renderSeasonTab();
 });
 
 // ── LOGIN ──
@@ -346,6 +420,7 @@ function setAdminTab(tab,el){
   if(tab==="teams") renderTeams();
   if(tab==="results") renderResultsTable();
   if(tab==="fixtures") renderFixturesTable();
+  if(tab==="season") renderSeasonTab();
 }
 window.setAdminTab=setAdminTab;
 
@@ -827,6 +902,214 @@ window.cancelNewRow=function(table){
   const tbody=document.getElementById(table+"-tbody");
   const row=tbody.querySelector("tr.new-row");
   if(row) tbody.removeChild(row);
+};
+
+// ════════════════════════════════════════
+// SEASON MANAGEMENT
+// ════════════════════════════════════════
+
+// Calculates table standings for a division
+function calcStandings(div){
+  const tbl={};
+  (state.teams[div]||[]).forEach(t=>{tbl[t]={name:t,p:0,w:0,d:0,l:0,gf:0,ga:0};});
+  Object.values(state.results||{}).filter(r=>r.div===div).forEach(r=>{
+    if(!tbl[r.home]||!tbl[r.away]) return;
+    const h=tbl[r.home],a=tbl[r.away];
+    h.p++;a.p++;h.gf+=r.hg;h.ga+=r.ag;a.gf+=r.ag;a.ga+=r.hg;
+    if(r.hg>r.ag){h.w++;a.l++;}else if(r.hg<r.ag){a.w++;h.l++;}else{h.d++;a.d++;}
+  });
+  return Object.values(tbl)
+    .map(t=>({...t,gd:t.gf-t.ga,pts:t.w*3+t.d}))
+    .sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name));
+}
+
+function renderSeasonTab(){
+  const inp=document.getElementById("season-name-input");
+  if(inp) inp.value=currentSeasonName;
+  const disp=document.getElementById("current-season-display");
+  if(disp) disp.textContent=currentSeasonName?`Active: ${currentSeasonName}`:"No season name set yet.";
+  renderArchivedSeasons();
+}
+
+window.saveSeasonName=function(){
+  const name=document.getElementById("season-name-input").value.trim();
+  if(!name){toast("Enter a season name");return;}
+  set(ref(db,"state/currentSeason"),name);
+  toast("Season name saved");
+};
+
+function renderArchivedSeasons(){
+  const c=document.getElementById("archived-seasons-list");
+  const list=Object.entries(archivedSeasons).sort((a,b)=>b[1].archivedAt-a[1].archivedAt);
+  if(!list.length){c.innerHTML=`<div style="color:var(--muted-fg);font-size:0.8rem;padding:8px 0;">No archived seasons yet.</div>`;return;}
+  c.innerHTML=list.map(([id,s])=>`
+    <div class="archived-row">
+      <div>
+        <div class="archived-label">${esc(s.label||id)}</div>
+        <div class="archived-date">Archived ${s.archivedAt?new Date(s.archivedAt).toLocaleDateString("en-GB"):""}</div>
+      </div>
+    </div>`).join("");
+}
+
+// ── PREVIEW ──
+let previewTeams=null; // {prem:[],champ:[],div1:[],div2:[]}
+
+window.previewNewSeason=function(){
+  const newName=document.getElementById("new-season-name-input").value.trim();
+  if(!newName){toast("Enter a name for the new season");return;}
+
+  // Build proposed teams by applying promotion/demotion
+  const standings={};
+  DIV_KEYS.forEach(d=>{standings[d]=calcStandings(d);});
+
+  // Clone current teams
+  const proposed={};
+  DIV_KEYS.forEach(d=>{proposed[d]=[...(state.teams[d]||[])];});
+
+  // Determine movers
+  // prem: last → champ
+  const premTeams=standings.prem;
+  const champTeams=standings.champ;
+  const d1Teams=standings.div1;
+  const d2Teams=standings.div2;
+
+  const moves=[]; // {team, from, to, reason}
+
+  if(premTeams.length>=1){
+    const relegated=premTeams[premTeams.length-1].name;
+    moves.push({team:relegated,from:"prem",to:"champ",reason:"Relegated"});
+  }
+  if(champTeams.length>=1){
+    const promoted=champTeams[0].name;
+    moves.push({team:promoted,from:"champ",to:"prem",reason:"Promoted"});
+    if(champTeams.length>=2){
+      const relegated=champTeams[champTeams.length-1].name;
+      moves.push({team:relegated,from:"champ",to:"div1",reason:"Relegated"});
+    }
+  }
+  if(d1Teams.length>=1){
+    const promoted=d1Teams[0].name;
+    if(!moves.find(m=>m.team===promoted)) moves.push({team:promoted,from:"div1",to:"champ",reason:"Promoted"});
+    if(d1Teams.length>=2){
+      const relegated=d1Teams[d1Teams.length-1].name;
+      if(!moves.find(m=>m.team===relegated)) moves.push({team:relegated,from:"div1",to:"div2",reason:"Relegated"});
+    }
+  }
+  if(d2Teams.length>=1){
+    const promoted=d2Teams[0].name;
+    if(!moves.find(m=>m.team===promoted)) moves.push({team:promoted,from:"div2",to:"div1",reason:"Promoted"});
+  }
+
+  // Apply moves to proposed
+  moves.forEach(({team,from,to})=>{
+    proposed[from]=proposed[from].filter(t=>t!==team);
+    if(!proposed[to].includes(team)) proposed[to].push(team);
+  });
+
+  previewTeams=proposed;
+
+  // Render preview modal
+  document.getElementById("preview-season-label").textContent=newName;
+  const container=document.getElementById("preview-divisions");
+
+  container.innerHTML=DIV_KEYS.map(div=>{
+    const teams=proposed[div];
+    const rows=teams.map(team=>{
+      const move=moves.find(m=>m.team===team);
+      let badge="";
+      if(move&&move.to===div&&move.from!==div){
+        badge=`<span class="move-badge up">${move.reason} ↑</span>`;
+      } else if(move&&move.from===div&&move.to!==div){
+        // Will be shown in destination — skip here since we already moved them
+      }
+      const prevDiv=move&&move.from!==div?move.from:null;
+      if(prevDiv) badge=`<span class="move-badge up">${esc(move.reason)} from ${esc(DIVS[prevDiv])}</span>`;
+
+      const moveUpDisabled=DIV_KEYS.indexOf(div)===0?"disabled":"";
+      const moveDnDisabled=DIV_KEYS.indexOf(div)===DIV_KEYS.length-1?"disabled":"";
+      return `<div class="preview-team-row" data-team="${esc(team)}" data-div="${div}">
+        <span style="flex:1">${esc(team)}</span>
+        ${badge}
+        <button class="move-btn" ${moveUpDisabled} onclick="moveTeamUp('${esc(team)}','${div}')" title="Move up a division">↑</button>
+        <button class="move-btn" ${moveDnDisabled} onclick="moveTeamDown('${esc(team)}','${div}')" title="Move down a division">↓</button>
+      </div>`;
+    }).join("");
+    return `<div class="preview-div-block">
+      <div class="preview-div-header" data-div="${div}">${DIVS[div]}</div>
+      <div id="preview-div-${div}">${rows||'<div style="padding:10px 14px;color:var(--muted-fg);font-size:0.8rem;">No teams</div>'}</div>
+    </div>`;
+  }).join("");
+
+  const modal=document.getElementById("season-preview-modal");
+  modal.style.display="flex";
+};
+
+window.moveTeamUp=function(team,fromDiv){
+  const fromIdx=DIV_KEYS.indexOf(fromDiv);
+  if(fromIdx<=0) return;
+  const toDiv=DIV_KEYS[fromIdx-1];
+  previewTeams[fromDiv]=previewTeams[fromDiv].filter(t=>t!==team);
+  previewTeams[toDiv].push(team);
+  refreshPreviewDivisions();
+};
+window.moveTeamDown=function(team,fromDiv){
+  const fromIdx=DIV_KEYS.indexOf(fromDiv);
+  if(fromIdx>=DIV_KEYS.length-1) return;
+  const toDiv=DIV_KEYS[fromIdx+1];
+  previewTeams[fromDiv]=previewTeams[fromDiv].filter(t=>t!==team);
+  previewTeams[toDiv].push(team);
+  refreshPreviewDivisions();
+};
+
+function refreshPreviewDivisions(){
+  DIV_KEYS.forEach(div=>{
+    const c=document.getElementById("preview-div-"+div);
+    if(!c) return;
+    const teams=previewTeams[div]||[];
+    c.innerHTML=teams.map(team=>{
+      const moveUpDisabled=DIV_KEYS.indexOf(div)===0?"disabled":"";
+      const moveDnDisabled=DIV_KEYS.indexOf(div)===DIV_KEYS.length-1?"disabled":"";
+      return `<div class="preview-team-row" data-team="${esc(team)}" data-div="${div}">
+        <span style="flex:1">${esc(team)}</span>
+        <button class="move-btn" ${moveUpDisabled} onclick="moveTeamUp('${esc(team)}','${div}')" title="Move up">↑</button>
+        <button class="move-btn" ${moveDnDisabled} onclick="moveTeamDown('${esc(team)}','${div}')" title="Move down">↓</button>
+      </div>`;
+    }).join("")||'<div style="padding:10px 14px;color:var(--muted-fg);font-size:0.8rem;">No teams</div>';
+  });
+}
+
+window.closeSeasonPreview=function(){
+  document.getElementById("season-preview-modal").style.display="none";
+  previewTeams=null;
+};
+
+window.confirmNewSeason=function(){
+  const newName=document.getElementById("new-season-name-input").value.trim();
+  if(!newName||!previewTeams){toast("Something went wrong");return;}
+  if(!confirm(`Archive "${currentSeasonName||"current season"}" and start "${newName}"?`)) return;
+
+  const archiveId="season_"+Date.now();
+  const archive={
+    label:currentSeasonName||"Unnamed Season",
+    archivedAt:Date.now(),
+    teams:JSON.parse(JSON.stringify(state.teams)),
+    results:state.results||{},
+    fixtures:state.fixtures||{}
+  };
+
+  // Write archive
+  set(ref(db,"state/seasons/"+archiveId),archive);
+  // Apply new teams
+  set(ref(db,"state/teams"),previewTeams);
+  // Clear results and fixtures
+  set(ref(db,"state/results"),null);
+  set(ref(db,"state/fixtures"),null);
+  // Set new season name
+  set(ref(db,"state/currentSeason"),newName);
+
+  closeSeasonPreview();
+  document.getElementById("new-season-name-input").value="";
+  toast(`Season started: ${newName} ✓`);
 };
 
 setLoading(true);
