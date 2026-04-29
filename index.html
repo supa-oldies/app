@@ -352,7 +352,7 @@ function renderTable(){
             const gdStr=t.gd>0?"+"+t.gd:String(t.gd);
             const formHTML=form.map(f=>`<div class="form-pip ${f}">${f==="blank"?"":f}</div>`).join("");
             const prefix=i<3?`<span style="margin-right:3px">${medals[i]}</span>`:"";
-            const promoLine=showPromo&&i===0?"zone-promo-border":"";
+            const promoLine=showPromo&&i===1?"zone-promo-border":"";
             const relegLine=showReleg&&i===8?"zone-releg-border":"";
             const bottomLine=showBottom&&i===total-2?"zone-releg-border":"";
             const topRow=i===0?"top-row":"";
