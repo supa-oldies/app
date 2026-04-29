@@ -412,7 +412,7 @@ function renderFixtures(){
                   <div class="fixture-team">${esc(f.away)}</div>
                 </div>
                 <div class="fixture-meta-cols">
-                  ${f.datetime?`<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value">${esc(f.datetime)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
+                  ${(f.date||f.time)?`<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value">${[f.date,f.time].filter(Boolean).map(v=>esc(v)).join(' · ')}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
                   ${f.pitch?`<div class="fix-meta-col"><div class="fix-meta-label">Pitch</div><div class="fix-meta-value">${esc(f.pitch)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Pitch</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
                   ${f.referee?`<div class="fix-meta-col"><div class="fix-meta-label">Referee</div><div class="fix-meta-value">${esc(f.referee)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Referee</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
                 </div>
