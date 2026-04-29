@@ -132,6 +132,34 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
 .loading-text{font-size:0.78rem;color:var(--muted-fg);letter-spacing:0.08em;text-transform:uppercase;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
 .fade-in{animation:fadeIn 0.2s ease;}
+/* ── HELP TAB ── */
+.help-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.help-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;transition:background 0.15s;}
+.help-header:hover{background:var(--muted);}
+.help-header-left{display:flex;align-items:center;gap:10px;}
+.help-icon{font-size:1.1rem;flex-shrink:0;}
+.help-title{font-size:0.88rem;font-weight:700;color:var(--foreground);}
+.help-subtitle{font-size:0.72rem;color:var(--muted-fg);margin-top:1px;}
+.help-chevron{color:var(--muted-fg);font-size:0.75rem;transition:transform 0.2s;flex-shrink:0;}
+.help-chevron.open{transform:rotate(180deg);}
+.help-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border);}
+.help-body.open{display:block;}
+.help-body h4{font-size:0.78rem;font-weight:700;color:var(--foreground);margin:16px 0 6px;text-transform:uppercase;letter-spacing:0.06em;}
+.help-body h4:first-child{margin-top:14px;}
+.help-body p{font-size:0.82rem;color:var(--muted-fg);line-height:1.6;margin-bottom:8px;}
+.help-body ul{font-size:0.82rem;color:var(--muted-fg);line-height:1.7;padding-left:18px;margin-bottom:8px;}
+.help-body li{margin-bottom:2px;}
+.help-body strong{color:var(--foreground);font-weight:600;}
+.help-tip{background:#fefce8;border:1px solid #fde047;border-radius:6px;padding:10px 14px;font-size:0.8rem;color:#713f12;margin:10px 0;line-height:1.5;}
+.help-tip strong{color:#92400e;}
+.help-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+.help-step-num{width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.help-step-text{font-size:0.82rem;color:var(--muted-fg);line-height:1.5;flex:1;}
+.help-step-text strong{color:var(--foreground);}
+.help-badge{display:inline-block;background:var(--muted);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:600;color:var(--foreground);vertical-align:middle;}
+.help-badge.red{background:#fef2f2;border-color:#fca5a5;color:var(--destructive);}
+.help-badge.green{background:#f0fdf4;border-color:#86efac;color:#15803d;}
+.help-badge.blue{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;}
 
 /* ── SEASON ── */
 .season-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
@@ -203,6 +231,7 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
       <button class="admin-tab"        onclick="setAdminTab('pending',this)" id="pending-tab">Pending</button>
       <button class="admin-tab"        onclick="setAdminTab('weather',this)">Weather</button>
       <button class="admin-tab"        onclick="setAdminTab('season',this)">Season</button>
+      <button class="admin-tab"        onclick="setAdminTab('help',this)">Help</button>
     </div>
   </div>
   <div class="content-area">
@@ -380,6 +409,247 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
 
     </div>
 
+
+    <!-- HELP -->
+    <div class="panel" id="admin-panel-help">
+      <div class="page-header">
+        <div class="page-title">Admin Knowledge Base</div>
+        <div style="font-size:0.78rem;color:var(--muted-fg);">Click any section to expand</div>
+      </div>
+
+      <!-- Getting Started -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">🚀</span>
+            <div><div class="help-title">Getting Started</div><div class="help-subtitle">First-time setup from scratch</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Initial setup order</h4>
+          <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text"><strong>Set the season name</strong> — go to Season tab, enter a name like "Winter 2026" and click Save name. This appears as a subtitle under each division on the public site.</div></div>
+          <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text"><strong>Add teams</strong> — go to Teams tab. Each division has its own card with an Add field at the bottom. Type the team name and press Enter or click Add.</div></div>
+          <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text"><strong>Upload team logos</strong> — in the Teams tab, click the 📷 icon next to any team. Pick an image (PNG/JPG, ideally 200×200px, under 50KB). Logos appear on the public ladder, results and fixtures.</div></div>
+          <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text"><strong>Generate fixtures</strong> — go to Fixtures tab, open the Bulk Fixture Generator card. Pick a division, starting week number, and first match date (a Monday). Click Preview, review, then Save.</div></div>
+          <div class="help-step"><div class="help-step-num">5</div><div class="help-step-text"><strong>Print the referee QR code</strong> — go to Pending tab. The QR code links to the referee score submission page. Print it and place it at the desk on match night.</div></div>
+          <div class="help-tip"><strong>Tip:</strong> Repeat steps 2–4 for each division. Teams can only be assigned to one division at a time.</div>
+        </div>
+      </div>
+
+      <!-- Teams -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">👥</span>
+            <div><div class="help-title">Managing Teams</div><div class="help-subtitle">Add, remove and upload logos</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Adding a team</h4>
+          <p>Go to <strong>Teams</strong> tab. Find the division card, type the team name in the Add field and press <strong>Enter</strong> or click <strong>Add</strong>. Team names must be unique across all divisions.</p>
+          <h4>Removing a team</h4>
+          <p>Click the <strong>✕</strong> button next to any team name. This permanently removes the team and deletes all their results and fixtures — you will be asked to confirm first.</p>
+          <h4>Uploading a logo</h4>
+          <ul>
+            <li>Click the <strong>📷</strong> icon next to a team name</li>
+            <li>Select an image file from your device</li>
+            <li>It saves instantly — no separate save button needed</li>
+          </ul>
+          <div class="help-tip"><strong>Logo specs:</strong> PNG with transparent background is ideal. 200×200px, under 50KB. Use <strong>squoosh.app</strong> to resize and compress for free.</div>
+          <h4>No logo?</h4>
+          <p>If no logo is uploaded, the public site shows a red circle with the team's first initial — it always looks intentional.</p>
+        </div>
+      </div>
+
+      <!-- Fixtures -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">📅</span>
+            <div><div class="help-title">Fixtures</div><div class="help-subtitle">Bulk generator, dates, editing</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Bulk fixture generator</h4>
+          <p>The generator uses the <strong>circle method</strong> — every team plays every other team once per half-season, and every team plays every single week. The full season is two halves with home/away reversed.</p>
+          <ul>
+            <li>Pick a <strong>Division</strong> and <strong>Starting Week</strong> number</li>
+            <li>Pick the <strong>First match date</strong> — defaults to the next Monday</li>
+            <li>Click <strong>Preview fixtures</strong> to review the full schedule including referee assignments</li>
+            <li>A <span class="help-badge blue">↩ Second half</span> badge marks where the second half begins</li>
+            <li>Click <strong>Save</strong> to write all fixtures to Firebase at once</li>
+          </ul>
+          <div class="help-tip"><strong>Referee assignment:</strong> The generator automatically assigns a referee team to each fixture — a team that isn't playing that match. Assignment is rotated across the full season so the load is shared evenly.</div>
+          <h4>Match week dates</h4>
+          <p>The <strong>Match Week Dates</strong> card (below the generator) shows a date picker for each scheduled week. Change a date and click <strong>Set</strong> — all fixtures in that week update simultaneously. Use this for public holidays or any one-off date changes.</p>
+          <h4>Editing a fixture</h4>
+          <p>Click the <strong>✏️</strong> button on any fixture row to edit it inline. Change division, teams, week, date, time, pitch or referee. Click <strong>Save</strong> to commit or <strong>✕</strong> to cancel.</p>
+          <h4>Adding a single fixture</h4>
+          <p>Click <strong>+ Add fixture</strong> at the bottom of the fixtures table. Fill in the inline row — division, home team, away team, week number, date (picker), time (dropdown: 7:00pm / 7:45pm / 8:30pm), pitch (2A / 2B / 4A / 6A / 6B) and referee. Click <strong>Save</strong>.</p>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">⚽</span>
+            <div><div class="help-title">Results</div><div class="help-subtitle">Entering scores, drafts, approvals</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Draft results</h4>
+          <p>Any fixture that doesn't yet have a result appears automatically as a <strong>draft row</strong> at the bottom of the Results table (highlighted in yellow). Enter both scores and click <strong>Publish</strong> — the result goes live on the public site immediately.</p>
+          <h4>From fixture shortcut</h4>
+          <p>Click the <strong>⚡ From fixture</strong> button to pick a scheduled fixture and pre-fill the result row with the correct division, teams, week and date. You only need to enter the scores.</p>
+          <h4>Adding a result manually</h4>
+          <p>Click <strong>+ Add result</strong> at the bottom of the table. Fill in division, week, home team, score, away team score and date. Click <strong>Save</strong>.</p>
+          <h4>Editing a result</h4>
+          <p>Click the <strong>✏️</strong> button on any result row to edit it inline. Click <strong>Save</strong> to commit.</p>
+          <h4>Deleting a result</h4>
+          <p>Click the <strong>🗑</strong> button and confirm. Deleting a result updates the ladder immediately.</p>
+          <h4>Filtering by division</h4>
+          <p>Use the pill filters at the top of the Results panel to show only one division at a time.</p>
+        </div>
+      </div>
+
+      <!-- Referee flow -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">🏴</span>
+            <div><div class="help-title">Referee Flow</div><div class="help-subtitle">QR code, score submission, pending approvals</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>How it works</h4>
+          <p>Each match has a nominated referee team assigned automatically when fixtures are generated. A player from that team scans the QR code, selects their match, enters the score and their name, then submits. The score sits as <strong>pending</strong> until you approve it.</p>
+          <h4>Printing the QR code</h4>
+          <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Go to <strong>Pending</strong> tab</div></div>
+          <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Click <strong>🖨 Print QR</strong> — a print-ready page opens with the QR code and URL</div></div>
+          <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Place it at the scorer's desk on match night</div></div>
+          <div class="help-tip"><strong>Note:</strong> The QR code links to your live Vercel URL — it will not work when opening the HTML file locally.</div>
+          <h4>Approving a pending result</h4>
+          <p>Go to <strong>Pending</strong> tab. Each submitted score shows the division, teams, score, date, the referee's name and the submission time. Click <strong>✓ Approve</strong> to publish it as an official result, or <strong>✕</strong> to reject and discard it.</p>
+          <div class="help-tip"><strong>Disputed score?</strong> The submitter's name is recorded alongside every pending result so you know who to follow up with.</div>
+          <h4>The referee page</h4>
+          <p>The public referee page at <strong>/referee</strong> shows only today's fixtures. Referees pick their match, enter home and away scores, enter their name, and tap Submit. Results go to pending — nothing is published without admin approval.</p>
+        </div>
+      </div>
+
+      <!-- Match weeks -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">✅</span>
+            <div><div class="help-title">Match Weeks</div><div class="help-subtitle">Completing rounds, weather postponements</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Marking a week complete</h4>
+          <p>In the <strong>Results</strong> tab, each match week heading has a <strong>Mark complete</strong> button. Once clicked, the week shows a <span class="help-badge green">✓ Complete</span> badge and its fixtures are hidden from the public Fixtures tab (since they've been played). Use <strong>Undo</strong> to reopen a week if needed.</p>
+          <h4>Postponing for weather</h4>
+          <p>Go to the <strong>Weather</strong> tab.</p>
+          <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Select the <strong>match week</strong> to postpone from the dropdown</div></div>
+          <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Set <strong>push back</strong> — number of weeks to shift (usually 1)</div></div>
+          <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Click <strong>Preview changes</strong> — a modal shows every affected fixture with its old and new week number</div></div>
+          <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text">Click <strong>Confirm reschedule</strong> — all weeks from that point shift forward, dates update automatically</div></div>
+          <div class="help-tip"><strong>Important:</strong> All subsequent rounds also shift — not just the postponed week.</div>
+          <h4>Public site banner</h4>
+          <p>In the <strong>Weather</strong> tab, type a message in the <strong>Banner message</strong> field and click <strong>Set banner</strong>. A yellow warning bar appears at the top of the public site immediately. Click <strong>Clear banner</strong> once the situation is resolved.</p>
+        </div>
+      </div>
+
+      <!-- Season management -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">🏆</span>
+            <div><div class="help-title">Season Management</div><div class="help-subtitle">End of season, promotion, archiving</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>Setting the season name</h4>
+          <p>Go to <strong>Season</strong> tab. Enter a name (e.g. "Winter 2026") and click <strong>Save name</strong>. This appears under each division banner on the public site in place of "Six-A-Side".</p>
+          <h4>Starting a new season</h4>
+          <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Enter the new season name (e.g. "Summer 2026") in the Start New Season card</div></div>
+          <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Click <strong>Preview moves</strong> — the system calculates promotions and demotions based on the final ladder</div></div>
+          <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Review the modal — each team shows which division they'll move to. Use <strong>↑</strong> / <strong>↓</strong> buttons to override any move</div></div>
+          <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text">Click <strong>Confirm &amp; Start Season</strong> — the current season archives, teams reorganise, and results/fixtures clear</div></div>
+          <div class="help-tip"><strong>Promotion/demotion logic:</strong> Premier League bottom → Championship. Championship top → Premier League, bottom → League One. League One top → Championship, bottom → League Two. League Two top → League One.</div>
+          <h4>Archived seasons</h4>
+          <p>All past seasons are listed at the bottom of the Season tab with their archive date. Data is stored permanently in Firebase — nothing is deleted when a new season starts.</p>
+          <div class="help-tip"><strong>Before starting a new season:</strong> Make sure all results are entered and all match weeks are marked complete.</div>
+        </div>
+      </div>
+
+      <!-- Public site -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">🌐</span>
+            <div><div class="help-title">Public Site</div><div class="help-subtitle">What players see, sharing, banners</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>What's visible</h4>
+          <ul>
+            <li><strong>Table</strong> — live ladder with points, goal difference, form (last 5), and week-on-week movement arrows</li>
+            <li><strong>Fixtures</strong> — upcoming matches with date, time, pitch and referee team. Completed and postponed weeks are hidden automatically</li>
+            <li><strong>Results</strong> — all published results grouped by match week, with winner highlighted</li>
+          </ul>
+          <h4>Share links</h4>
+          <p>The <strong>🔗 Share</strong> button (bottom-right of the public site) copies a URL that links directly to the current division and tab — e.g. <code>?div=prem&tab=table</code>. Share it with players so they land in the right place.</p>
+          <h4>Register to play</h4>
+          <p>The <strong>Register to Play</strong> button in the header opens a form for prospective players to submit their name, email, phone and how they want to play (Individual / Team / Both). On submit it opens the user's email client pre-addressed to the league contact.</p>
+          <h4>Weather banner</h4>
+          <p>Set from the <strong>Weather</strong> tab in admin. Appears as a yellow bar at the very top of the public site. Visible to all visitors until cleared.</p>
+          <h4>URLs</h4>
+          <ul>
+            <li><strong>/</strong> — public site (table, fixtures, results)</li>
+            <li><strong>/admin</strong> — this admin panel</li>
+            <li><strong>/referee</strong> — referee score submission (today's fixtures only)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Deployment -->
+      <div class="help-section">
+        <div class="help-header" onclick="toggleHelp(this)">
+          <div class="help-header-left">
+            <span class="help-icon">🚢</span>
+            <div><div class="help-title">Deployment</div><div class="help-subtitle">Updating the live site</div></div>
+          </div>
+          <span class="help-chevron">▼</span>
+        </div>
+        <div class="help-body">
+          <h4>How updates are deployed</h4>
+          <p>The app is hosted on <strong>Vercel</strong>, connected to a <strong>GitHub</strong> repository. Any file pushed to GitHub automatically redeploys within about 30 seconds.</p>
+          <h4>Uploading new files</h4>
+          <div class="help-step"><div class="help-step-num">1</div><div class="help-step-text">Go to your GitHub repository</div></div>
+          <div class="help-step"><div class="help-step-num">2</div><div class="help-step-text">Click <strong>Add file → Upload files</strong></div></div>
+          <div class="help-step"><div class="help-step-num">3</div><div class="help-step-text">Drag in the updated <code>index.html</code>, <code>admin.html</code>, <code>referee.html</code> or <code>vercel.json</code></div></div>
+          <div class="help-step"><div class="help-step-num">4</div><div class="help-step-text">Click <strong>Commit changes</strong> — Vercel picks up the update automatically</div></div>
+          <h4>Files and their roles</h4>
+          <ul>
+            <li><code>index.html</code> — the public-facing site</li>
+            <li><code>admin.html</code> — this admin panel</li>
+            <li><code>referee.html</code> — the referee score submission page</li>
+            <li><code>vercel.json</code> — URL routing (/admin → admin.html, /referee → referee.html)</li>
+          </ul>
+          <div class="help-tip"><strong>Data is in Firebase</strong> — not in the HTML files. Redeploying never affects your results, fixtures or teams. Firebase is the single source of truth.</div>
+        </div>
+      </div>
+
+    </div>
     <!-- SEASON -->
     <div class="panel" id="admin-panel-season">
       <div class="page-header"><div class="page-title">Season Management</div></div>
@@ -541,6 +811,7 @@ function setAdminTab(tab,el){
   if(tab==="fixtures") renderFixturesTable();
   if(tab==="season") renderSeasonTab();
   if(tab==="weather"){renderWeatherTab();}
+  if(tab==="help"){/* static content */}
   if(tab==="pending"){renderPendingResults();generateQR();}
 }
 window.setAdminTab=setAdminTab;
@@ -1706,6 +1977,16 @@ function renderWeatherTab(){
   d.setDate(d.getDate()+daysUntilMon);
   el.value=d.toISOString().split("T")[0];
 })();
+
+
+// ── HELP TAB ──
+window.toggleHelp=function(header){
+  const body=header.nextElementSibling;
+  const chevron=header.querySelector(".help-chevron");
+  const isOpen=body.classList.contains("open");
+  body.classList.toggle("open",!isOpen);
+  chevron.classList.toggle("open",!isOpen);
+};
 
 setLoading(true);
 </script>
