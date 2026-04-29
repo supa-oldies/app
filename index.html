@@ -92,14 +92,15 @@ input[type="number"]{text-align:center;}
 table{width:100%;border-collapse:collapse;font-size:0.83rem;}
 thead tr{background:var(--muted);border-bottom:1px solid var(--border);}
 thead th{padding:8px 12px;text-align:center;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted-fg);white-space:nowrap;}
-thead th.th-team{text-align:left;padding-left:14px;}
+thead th.th-team{text-align:left;padding-left:14px;position:sticky;left:0;background:var(--muted);z-index:2;}
 tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
 tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:#f9f9fb;}
-td{padding:10px 12px;text-align:center;color:var(--foreground);}
-td.td-team{text-align:left;padding-left:14px;min-width:180px;}
+td{padding:10px 12px;text-align:center;color:var(--foreground);white-space:nowrap;}
+td.td-team{text-align:left;padding-left:14px;min-width:160px;max-width:200px;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 4px rgba(0,0,0,0.05);}
+tbody tr:hover td.td-team{background:#f9f9fb;}
 .team-pos{display:inline-block;width:20px;color:var(--muted-fg);font-size:0.75rem;}
-.team-name{font-weight:600;font-size:0.88rem;}
+.team-name{font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;display:inline-block;vertical-align:middle;}
 .pts-cell{font-size:1.05rem;font-weight:700;color:var(--foreground);}
 .gd-pos{color:#16a34a;font-weight:600;}.gd-neg{color:#dc2626;font-weight:600;}.gd-zero{color:var(--muted-fg);}
 .move-cell{width:28px;text-align:center;}
@@ -114,6 +115,7 @@ td.td-team{text-align:left;padding-left:14px;min-width:180px;}
 .legend-dot{width:12px;height:12px;border-radius:50%;}
 tr.zone-promo-border td{border-bottom:2px dashed rgba(22,163,74,0.4)!important;}
 tr.zone-releg-border td{border-bottom:2px dashed rgba(220,38,38,0.4)!important;}
+tr.top-row td.td-team{border-left:3px solid #16a34a;}
 .zone-legend-line{display:inline-block;width:20px;height:2px;border-top:2px dashed;vertical-align:middle;}
 .promo-line{border-color:rgba(22,163,74,0.7);}.releg-line{border-color:rgba(220,38,38,0.7);}
 /* ── RESULTS ── */
@@ -156,16 +158,15 @@ tr.zone-releg-border td{border-bottom:2px dashed rgba(220,38,38,0.4)!important;}
   .div-tab .dot{width:6px;height:6px;}
   .main-tab{font-size:0.72rem;padding:8px 10px 8px 0;}
   td,thead th{padding:8px 6px;font-size:0.78rem;}
-  td.td-team{padding-left:8px;min-width:0;}
-  .team-pos{width:16px;font-size:0.7rem;}
-  .team-name{font-size:0.82rem;}
-  .pts-cell{font-size:0.95rem;}
-  table th:nth-child(6),table td:nth-child(6),
-  table th:nth-child(7),table td:nth-child(7){display:none;}
+  td.td-team{padding-left:8px;min-width:140px;max-width:160px;}
+  thead th.th-team{padding-left:8px;}
+  .team-pos{width:14px;font-size:0.68rem;}
+  .team-name{font-size:0.8rem;max-width:100px;}
+  .pts-cell{font-size:0.9rem;}
   .form-pip{width:14px;height:14px;font-size:0.48rem;}
   .form-row{gap:1px;}
   .move-cell{width:20px;}
-  .arrow-up,.arrow-down{font-size:0.7rem;}
+  .arrow-up,.arrow-down{font-size:0.68rem;}
   .form-legend{gap:8px;font-size:0.65rem;padding:6px 10px;}
   .result-row{padding:8px 10px;gap:6px;}
   .res-date{display:none;}
@@ -322,7 +323,7 @@ function render(){
 function renderTable(){
   const rows=calcTable(currentDiv);
   const c=document.getElementById("panel-table");
-  const medals=["🏆","",""];
+  const medals=["","",""];
   const total=rows.length;
   const showPromo=currentDiv!=="prem"&&total>=2;
   const showReleg=total>=10;
@@ -354,7 +355,8 @@ function renderTable(){
             const promoLine=showPromo&&i===0?"zone-promo-border":"";
             const relegLine=showReleg&&i===8?"zone-releg-border":"";
             const bottomLine=showBottom&&i===total-2?"zone-releg-border":"";
-            const rowClass=[promoLine,relegLine,bottomLine].filter(Boolean).join(" ");
+            const topRow=i===0?"top-row":"";
+            const rowClass=[topRow,promoLine,relegLine,bottomLine].filter(Boolean).join(" ");
             const curPos=i+1;
             const oldPos=prev[t.name];
             let arrow="";
