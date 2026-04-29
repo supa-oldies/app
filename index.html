@@ -125,8 +125,12 @@ tr.zone-releg-border td{border-bottom:2px dashed rgba(220,38,38,0.4)!important;}
 .res-div-badge[data-div="div1"]{background:var(--d1-bg);color:var(--d1-fg);}
 .res-div-badge[data-div="div2"]{background:var(--d2-bg);color:var(--d2-fg);}
 .res-teams{flex:1;display:flex;align-items:center;gap:8px;min-width:0;}
-.res-team{flex:1;font-weight:600;font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.res-team{flex:1;font-weight:500;font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted-fg);}
 .res-team.home{text-align:right;}.res-team.away{text-align:left;}
+.res-team.winner{font-weight:700;color:var(--foreground);}
+.res-chevron{font-size:0.7rem;color:var(--muted-fg);flex-shrink:0;}
+.res-chevron.home{color:var(--foreground);}
+.res-chevron.away{color:var(--foreground);}
 .res-score{background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:3px 12px;font-size:0.95rem;font-weight:700;color:var(--foreground);white-space:nowrap;flex-shrink:0;}
 .res-date{color:var(--muted-fg);font-size:0.7rem;flex-shrink:0;}
 .results-empty{padding:28px 0;color:var(--muted-fg);font-size:0.8rem;}
@@ -432,9 +436,11 @@ function renderResults(){
           <div class="result-row">
             <span class="res-div-badge" data-div="${r.div}">${DIVS[r.div].short}</span>
             <div class="res-teams">
-              <div class="res-team home">${esc(r.home)}</div>
+              <div class="res-team home ${r.hg>r.ag?'winner':''}">${esc(r.home)}</div>
+              ${r.hg>r.ag?'<span class="res-chevron">&#10095;</span>':r.ag>r.hg?'<span class="res-chevron" style="visibility:hidden">&#10095;</span>':''}
               <div class="res-score">${r.hg} – ${r.ag}</div>
-              <div class="res-team away">${esc(r.away)}</div>
+              ${r.ag>r.hg?'<span class="res-chevron">&#10094;</span>':r.hg>r.ag?'<span class="res-chevron" style="visibility:hidden">&#10094;</span>':''}
+              <div class="res-team away ${r.ag>r.hg?'winner':''}">${esc(r.away)}</div>
             </div>
             <span class="res-date">${r.date}</span>
           </div>`).join("")}
