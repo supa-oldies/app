@@ -76,6 +76,9 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
 .submit-btn:hover{background:#b91c1c;}
 .back-btn{width:100%;background:none;border:1px solid var(--border);border-radius:var(--radius);padding:11px;font-family:'Inter',sans-serif;font-size:0.85rem;color:var(--muted-fg);cursor:pointer;margin-top:10px;}
 .back-btn:hover{border-color:var(--foreground);color:var(--foreground);}
+.name-input{width:100%;background:var(--muted);border:2px solid var(--border);border-radius:var(--radius);color:var(--foreground);padding:12px 14px;font-family:'Inter',sans-serif;font-size:1rem;outline:none;margin-top:16px;transition:border-color 0.15s;}
+.name-input:focus{border-color:var(--primary);background:#fff;}
+.name-label{font-size:0.72rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted-fg);margin-top:16px;display:block;}
 
 /* ── SUBMITTED ── */
 .submitted-card{background:var(--card);border:1px solid #bbf7d0;border-radius:var(--radius);padding:32px 20px;text-align:center;box-shadow:var(--shadow-md);}
@@ -138,6 +141,8 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
         <input class="score-input" type="number" id="score-ag" min="0" max="99" value="0" inputmode="numeric">
         <div class="score-team away" id="score-away-name"></div>
       </div>
+      <span class="name-label">Your name</span>
+      <input class="name-input" type="text" id="submitter-name" placeholder="e.g. John Smith" maxlength="60" autocomplete="name">
       <button class="submit-btn" onclick="submitScore()">Submit Score</button>
       <button class="back-btn" onclick="goBack()">← Back to fixtures</button>
     </div>
@@ -270,6 +275,7 @@ window.submitScore=function(){
   const ag=parseInt(document.getElementById("score-ag").value)||0;
   const f=selectedFixture;
   // Save as pending result
+  const submitterName=document.getElementById("submitter-name").value.trim()||"Unknown";
   push(ref(db,"state/pendingResults"),{
     div:f.div,
     home:f.home,
@@ -278,6 +284,7 @@ window.submitScore=function(){
     matchWeek:f.matchWeek||null,
     date:f.date||new Date().toLocaleDateString("en-GB"),
     fixtureKey:f._key,
+    submittedBy:submitterName,
     submittedAt:Date.now()
   });
   document.getElementById("submitted-score-display").textContent=`${hg} — ${ag}`;

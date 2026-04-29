@@ -1332,7 +1332,8 @@ function renderPendingResults(){
       <th style="width:44px;text-align:center">AG</th>
       <th style="width:22%">Away</th>
       <th style="width:90px">Date</th>
-      <th style="width:90px">Submitted</th>
+      <th style="width:110px">Submitted by</th>
+      <th style="width:90px">Time</th>
       <th style="width:120px"></th>
     </tr></thead>
     <tbody>
@@ -1345,6 +1346,7 @@ function renderPendingResults(){
           <td><span class="cell-val" style="text-align:center;display:block;font-weight:700;">${r.ag}</span></td>
           <td>${teamCellHTML(r.away)}</td>
           <td><span class="cell-val muted">${r.date||""}</span></td>
+          <td><span class="cell-val" style="font-weight:600;font-size:0.8rem;">${esc(r.submittedBy||"—")}</span></td>
           <td><span class="cell-val muted" style="font-size:0.7rem;">${r.submittedAt?new Date(r.submittedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}</span></td>
           <td><div class="row-actions">
             <button class="btn-submit" style="background:#16a34a;font-size:0.7rem;padding:4px 10px;" onclick="approvePending('${r._key}')">✓ Approve</button>
