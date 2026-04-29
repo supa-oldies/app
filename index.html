@@ -321,7 +321,7 @@ function render(){
 function renderTable(){
   const rows=calcTable(currentDiv);
   const c=document.getElementById("panel-table");
-  const medals=["🥇","🥈","🥉"];
+  const medals=["🏆","",""];
   const total=rows.length;
   const showPromo=currentDiv!=="prem"&&total>=2;
   const showReleg=total>=10;
