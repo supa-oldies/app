@@ -133,13 +133,14 @@ tr.zone-releg-border td{border-bottom:2px dashed rgba(220,38,38,0.4)!important;}
 .mw-group{margin-bottom:20px;}
 .mw-heading{font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted-fg);padding:5px 0 7px;border-bottom:1px solid var(--border);margin-bottom:8px;}
 /* ── FIXTURES ── */
-.fixture-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;flex-wrap:wrap;padding:9px 14px;gap:8px;box-shadow:var(--shadow);animation:fadeUp 0.2s ease;}
-.fixture-vs{background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:3px 10px;font-size:0.75rem;font-weight:600;color:var(--muted-fg);white-space:nowrap;flex-shrink:0;letter-spacing:0.06em;}
-.fix-meta{color:var(--muted-fg);font-size:0.7rem;white-space:nowrap;}
-.fix-meta-group{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;}
-.fixture-team{flex:1;font-weight:600;font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.fixture-team.home{text-align:right;}.fixture-team.away{text-align:left;}
-.fixture-teams-row{display:flex;align-items:center;gap:8px;width:100%;}
+.fixture-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:stretch;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp 0.2s ease;}
+.fixture-teams{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px 16px;min-width:150px;flex:0 0 auto;border-right:1px solid var(--border);}
+.fixture-team{font-weight:600;font-size:0.88rem;color:var(--foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fixture-meta-cols{display:flex;align-items:stretch;flex:1;}
+.fix-meta-col{display:flex;flex-direction:column;justify-content:center;padding:10px 14px;border-right:1px solid var(--border);flex:1;}
+.fix-meta-col:last-child{border-right:none;}
+.fix-meta-label{font-size:0.6rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted-fg);margin-bottom:2px;}
+.fix-meta-value{font-size:0.82rem;font-weight:500;color:var(--foreground);}
 .fixtures-empty{padding:28px 0;color:var(--muted-fg);font-size:0.8rem;}
 /* ── MOBILE ── */
 @media(max-width:600px){
@@ -168,11 +169,15 @@ tr.zone-releg-border td{border-bottom:2px dashed rgba(220,38,38,0.4)!important;}
   .res-team{font-size:0.8rem;}
   .res-score{padding:2px 8px;font-size:0.85rem;}
   .btn-del{padding:3px 6px;font-size:0.65rem;}
-  .fixture-card{padding:8px 10px;gap:6px;}
-  .fix-meta-group{width:100%;padding-top:5px;border-top:1px solid var(--border);}
-  .fixture-teams-row{width:100%;}
-  .fix-meta{font-size:0.65rem;}
-  .fixture-team{font-size:0.8rem;}
+  .fixture-card{flex-direction:column;}
+  .fixture-teams{border-right:none;border-bottom:1px solid var(--border);padding:10px 12px;width:100%;}
+  .fixture-team{font-size:0.82rem;}
+  .fixture-meta-cols{flex-wrap:wrap;}
+  .fix-meta-col{flex:0 0 50%;border-right:none;border-bottom:1px solid var(--border);padding:8px 12px;}
+  .fix-meta-col:nth-child(odd){border-right:1px solid var(--border);}
+  .fix-meta-col:last-child{border-bottom:none;}
+  .fix-meta-label{font-size:0.58rem;}
+  .fix-meta-value{font-size:0.78rem;}
   .div-banner{padding:8px 12px;}
   .div-banner-title{font-size:0.78rem;}
 }
@@ -391,17 +396,15 @@ function renderFixtures(){
           <div class="results-list">
             ${grouped[wk].map(f=>`
               <div class="fixture-card">
-                <div class="fixture-teams-row">
-                  <span class="res-div-badge" data-div="${f.div}">${DIVS[f.div].short}</span>
-                  <div class="fixture-team home">${esc(f.home)}</div>
-                  <div class="fixture-vs">vs</div>
-                  <div class="fixture-team away">${esc(f.away)}</div>
+                <div class="fixture-teams">
+                  <div class="fixture-team">${esc(f.home)}</div>
+                  <div class="fixture-team">${esc(f.away)}</div>
                 </div>
-                ${(f.datetime||f.pitch||f.referee)?`<div class="fix-meta-group">
-                  ${f.datetime?`<span class="fix-meta">📅 ${esc(f.datetime)}</span>`:""}
-                  ${f.pitch?`<span class="fix-meta">⚽ Pitch ${esc(f.pitch)}</span>`:""}
-                  ${f.referee?`<span class="fix-meta">🏴 Ref: ${esc(f.referee)}</span>`:""}
-                </div>`:""}
+                <div class="fixture-meta-cols">
+                  ${f.datetime?`<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value">${esc(f.datetime)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Date / Time</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
+                  ${f.pitch?`<div class="fix-meta-col"><div class="fix-meta-label">Pitch</div><div class="fix-meta-value">${esc(f.pitch)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Pitch</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
+                  ${f.referee?`<div class="fix-meta-col"><div class="fix-meta-label">Referee</div><div class="fix-meta-value">${esc(f.referee)}</div></div>`:'<div class="fix-meta-col"><div class="fix-meta-label">Referee</div><div class="fix-meta-value" style="color:var(--muted-fg)">TBC</div></div>'}
+                </div>
               </div>`).join("")}
           </div>
         </div>`).join("")}
