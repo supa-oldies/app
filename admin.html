@@ -204,12 +204,15 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
               <th style="width:44px;text-align:center">AG</th>
               <th style="width:18%">Away Team</th>
               <th style="width:96px">Date</th>
-              <th style="width:72px"></th>
+              <th style="width:100px"></th>
             </tr></thead>
             <tbody id="results-tbody"></tbody>
           </table>
         </div>
-        <button class="add-row-btn" onclick="addResultRow()"><span class="plus">+</span> Add result</button>
+        <div style="display:flex;border-top:1px solid var(--border);">
+  <button class="add-row-btn" style="flex:1;border-top:none;border-radius:0 0 0 var(--radius);" onclick="addResultRow()"><span class="plus">+</span> Add result</button>
+  <button class="add-row-btn" style="flex:1;border-top:none;border-left:1px solid var(--border);border-radius:0 0 var(--radius) 0;" onclick="addResultFromFixture()"><span class="plus">⚡</span> From fixture</button>
+</div>
       </div>
     </div>
 
@@ -233,7 +236,7 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
               <th style="width:56px">Week</th>
               <th style="width:18%">Home Team</th>
               <th style="width:18%">Away Team</th>
-              <th style="width:160px">Date / Time</th>
+              <th style="width:100px">Date</th><th style="width:80px">Time</th>
               <th style="width:68px">Pitch</th>
               <th style="width:130px">Referee</th>
               <th style="width:80px"></th>
@@ -459,7 +462,21 @@ function renderResultsTable(){
     if(a.div!==b.div) return DIV_KEYS.indexOf(a.div)-DIV_KEYS.indexOf(b.div);
     return (a.matchWeek||99)-(b.matchWeek||99);
   });
+
+  // Find fixtures that don't have a matching published result yet
+  let pendingFixtures=fixturesArr().filter(f=>{
+    if(resultsFilter!=="all"&&f.div!==resultsFilter) return false;
+    // A fixture is "done" if there's a result with same div+home+away
+    return !resultsArr().some(r=>r.div===f.div&&r.home===f.home&&r.away===f.away);
+  });
+  pendingFixtures.sort((a,b)=>{
+    if(a.div!==b.div) return DIV_KEYS.indexOf(a.div)-DIV_KEYS.indexOf(b.div);
+    return (a.matchWeek||99)-(b.matchWeek||99);
+  });
+
   const existingNew=tbody.querySelector("tr.new-row");
+
+  // Published results
   tbody.innerHTML=rows.map(r=>`
     <tr data-key="${r._key}" class="fade-in">
       <td><span class="div-badge" data-div="${r.div}">${DIVS[r.div]||r.div}</span></td>
@@ -469,10 +486,56 @@ function renderResultsTable(){
       <td><span class="cell-val" style="text-align:center;display:block">${r.ag}</span></td>
       <td>${teamCellHTML(r.away)}</td>
       <td><span class="cell-val muted">${r.date||""}</span></td>
-      <td><div class="row-actions"><button class="btn-icon danger" onclick="deleteResult('${r._key}')" title="Delete">🗑</button></div></td>
+      <td><div class="row-actions">
+        <button class="btn-icon" onclick="editResult('${r._key}')" title="Edit">✏️</button>
+        <button class="btn-icon danger" onclick="deleteResult('${r._key}')" title="Delete">🗑</button>
+      </div></td>
     </tr>`).join("");
+
+  // Draft rows — one per unplayed fixture
+  if(pendingFixtures.length){
+    // Divider row
+    const divider=document.createElement("tr");
+    divider.innerHTML=`<td colspan="8" style="padding:8px 10px;background:#fefce8;border-top:2px dashed #fde047;border-bottom:1px solid #fde047;">
+      <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#a16207;">
+        📋 Draft — enter scores to publish
+      </span>
+    </td>`;
+    tbody.appendChild(divider);
+
+    pendingFixtures.forEach(f=>{
+      const tr=document.createElement("tr");
+      tr.className="draft-row";
+      tr.dataset.fixKey=f._key;
+      tr.style.background="#fffbeb";
+      tr.innerHTML=`
+        <td><span class="div-badge" data-div="${f.div}">${DIVS[f.div]||f.div}</span></td>
+        <td><span class="cell-val muted">${f.matchWeek||"—"}</span></td>
+        <td>${teamCellHTML(f.home)}</td>
+        <td><input class="cell-input draft-hg" type="number" value="" placeholder="—" min="0" max="99" style="text-align:center;background:#fff;border-color:var(--border);width:100%;max-width:52px;"></td>
+        <td><input class="cell-input draft-ag" type="number" value="" placeholder="—" min="0" max="99" style="text-align:center;background:#fff;border-color:var(--border);width:100%;max-width:52px;"></td>
+        <td>${teamCellHTML(f.away)}</td>
+        <td><span class="cell-val muted">${f.date||""}</span></td>
+        <td><div class="row-actions">
+          <button class="btn-submit" style="font-size:0.7rem;padding:4px 10px;" onclick="publishDraft(this,'${f._key}')">Publish</button>
+        </div></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
   if(existingNew) tbody.appendChild(existingNew);
 }
+
+window.publishDraft=function(btn,fixKey){
+  const tr=btn.closest("tr");
+  const hg=parseInt(tr.querySelector(".draft-hg").value);
+  const ag=parseInt(tr.querySelector(".draft-ag").value);
+  if(isNaN(hg)||isNaN(ag)){toast("Enter both scores first");return;}
+  const f=fixturesArr().find(x=>x._key===fixKey);
+  if(!f){toast("Fixture not found");return;}
+  pushResult({div:f.div,home:f.home,away:f.away,hg,ag,matchWeek:f.matchWeek||null,date:f.date||new Date().toLocaleDateString("en-GB")});
+  toast("Result published ✓");
+};
 
 window.addResultRow=function(){
   if(document.querySelector("#results-tbody tr.new-row")) return;
@@ -534,10 +597,11 @@ function renderFixturesTable(){
       <td><span class="cell-val muted">${f.matchWeek||"—"}</span></td>
       <td>${teamCellHTML(f.home)}</td>
       <td>${teamCellHTML(f.away)}</td>
-      <td><span class="cell-val muted">${f.datetime||"—"}</span></td>
+      <td><span class="cell-val muted">${f.date||"—"}</span></td>
+      <td><span class="cell-val muted">${f.time||"—"}</span></td>
       <td><span class="cell-val muted">${f.pitch||"—"}</span></td>
       <td><span class="cell-val muted">${f.referee||"—"}</span></td>
-      <td><div class="row-actions"><button class="btn-icon danger" onclick="deleteFixture('${f._key}')" title="Delete">🗑</button></div></td>
+      <td><div class="row-actions"><button class="btn-icon" onclick="editFixture('${f._key}')" title="Edit">✏️</button><button class="btn-icon danger" onclick="deleteFixture('${f._key}')" title="Delete">🗑</button></div></td>
     </tr>`).join("");
   if(existingNew) tbody.appendChild(existingNew);
 }
@@ -553,8 +617,21 @@ window.addFixtureRow=function(){
     <td><input class="cell-input" type="number" id="nf-week" placeholder="Wk" min="1" max="99"></td>
     <td><select class="cell-select" id="nf-home">${teamOptions(div)}</select></td>
     <td><select class="cell-select" id="nf-away">${teamOptions(div)}</select></td>
-    <td><input class="cell-input" type="text" id="nf-datetime" placeholder="e.g. Sat 14 Jun 10am"></td>
-    <td><input class="cell-input" type="text" id="nf-pitch" placeholder="e.g. 3" maxlength="10"></td>
+    <td><input class="cell-input" type="date" id="nf-date"></td>
+    <td><select class="cell-select" id="nf-time">
+      <option value="">—</option>
+      <option value="7:00pm">7:00pm</option>
+      <option value="7:45pm">7:45pm</option>
+      <option value="8:30pm">8:30pm</option>
+    </select></td>
+    <td><select class="cell-select" id="nf-pitch">
+      <option value="">—</option>
+      <option value="2A">2A</option>
+      <option value="2B">2B</option>
+      <option value="4A">4A</option>
+      <option value="6A">6A</option>
+      <option value="6B">6B</option>
+    </select></td>
     <td><input class="cell-input" type="text" id="nf-referee" placeholder="J. Smith" maxlength="30"></td>
     <td><div class="row-actions">
       <button class="btn-submit" onclick="submitFixture()">Save</button>
@@ -574,15 +651,177 @@ window.submitFixture=function(){
   const home=document.getElementById("nf-home").value;
   const away=document.getElementById("nf-away").value;
   const mw=parseInt(document.getElementById("nf-week").value)||null;
-  const dt=document.getElementById("nf-datetime").value.trim();
-  const pitch=document.getElementById("nf-pitch").value.trim();
+  const fdate=document.getElementById("nf-date").value.trim();
+  const ftime=document.getElementById("nf-time").value;
+  const pitch=document.getElementById("nf-pitch").value;
   const referee=document.getElementById("nf-referee").value.trim();
   if(!home||!away){toast("Select both teams");return;}
   if(home===away){toast("Same team selected");return;}
-  pushFixture({div,home,away,matchWeek:mw,datetime:dt||null,pitch:pitch||null,referee:referee||null});
+  // Format date nicely for display
+  let displayDate="";
+  if(fdate){const d=new Date(fdate+"T00:00:00");displayDate=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});}
+  pushFixture({div,home,away,matchWeek:mw,date:displayDate||null,dateRaw:fdate||null,time:ftime||null,pitch:pitch||null,referee:referee||null});
   cancelNewRow("fixtures");toast("Fixture added");
 };
 window.deleteFixture=function(key){if(!confirm("Delete this fixture?"))return;deleteFixtureDB(key);toast("Deleted");};
+
+// ════════════════════════════════════════
+// EDIT RESULT (inline)
+// ════════════════════════════════════════
+window.editResult=function(key){
+  // Remove any existing edit/new rows first
+  document.querySelectorAll("#results-tbody tr.new-row, #results-tbody tr.edit-row").forEach(r=>r.remove());
+  const r=resultsArr().find(x=>x._key===key);
+  if(!r) return;
+  const tr=document.querySelector(`#results-tbody tr[data-key="${key}"]`);
+  if(!tr) return;
+  tr.classList.add("edit-row","new-row");
+  tr.innerHTML=`
+    <td><select class="cell-select" id="er-div" onchange="updateEditRowTeams('${key}')">${divOptions(r.div)}</select></td>
+    <td><input class="cell-input" type="number" id="er-week" value="${r.matchWeek||''}" placeholder="Wk" min="1" max="99"></td>
+    <td><select class="cell-select" id="er-home">${teamOptions(r.div,r.home)}</select></td>
+    <td><input class="cell-input" type="number" id="er-hg" value="${r.hg}" min="0" max="99"></td>
+    <td><input class="cell-input" type="number" id="er-ag" value="${r.ag}" min="0" max="99"></td>
+    <td><select class="cell-select" id="er-away">${teamOptions(r.div,r.away)}</select></td>
+    <td><input class="cell-input" type="text" id="er-date" value="${r.date||''}" placeholder="dd/mm/yyyy"></td>
+    <td><div class="row-actions">
+      <button class="btn-submit" onclick="saveEditResult('${key}')">Save</button>
+      <button class="btn-cancel" onclick="renderResultsTable()">✕</button>
+    </div></td>`;
+};
+window.updateEditRowTeams=function(key){
+  const div=document.getElementById("er-div").value;
+  ["er-home","er-away"].forEach(id=>{const sel=document.getElementById(id);if(sel)sel.innerHTML=teamOptions(div);});
+};
+window.saveEditResult=function(key){
+  const div=document.getElementById("er-div").value;
+  const home=document.getElementById("er-home").value;
+  const away=document.getElementById("er-away").value;
+  const hg=parseInt(document.getElementById("er-hg").value)||0;
+  const ag=parseInt(document.getElementById("er-ag").value)||0;
+  const mw=parseInt(document.getElementById("er-week").value)||null;
+  const date=document.getElementById("er-date").value.trim()||new Date().toLocaleDateString("en-GB");
+  if(!home||!away){toast("Select both teams");return;}
+  if(home===away){toast("Same team selected");return;}
+  set(ref(db,"state/results/"+key),{div,home,away,hg,ag,matchWeek:mw,date});
+  toast("Result updated");
+};
+
+// ════════════════════════════════════════
+// EDIT FIXTURE (inline)
+// ════════════════════════════════════════
+window.editFixture=function(key){
+  document.querySelectorAll("#fixtures-tbody tr.new-row, #fixtures-tbody tr.edit-row").forEach(r=>r.remove());
+  const f=fixturesArr().find(x=>x._key===key);
+  if(!f) return;
+  const tr=document.querySelector(`#fixtures-tbody tr[data-key="${key}"]`);
+  if(!tr) return;
+  // Parse stored date back to yyyy-mm-dd for date input
+  // Use stored raw date if available, otherwise try to parse display string
+  let dateVal=f.dateRaw||"";
+  if(!dateVal&&f.date){try{const parts=f.date.split(" ");const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const d=new Date(new Date().getFullYear(),months[parts[2]]||0,parseInt(parts[1])||1);dateVal=d.toISOString().split("T")[0];}catch(e){}}
+  tr.classList.add("edit-row","new-row");
+  tr.innerHTML=`
+    <td><select class="cell-select" id="ef-div" onchange="updateEditFixtureTeams('${key}')">${divOptions(f.div)}</select></td>
+    <td><input class="cell-input" type="number" id="ef-week" value="${f.matchWeek||''}" placeholder="Wk" min="1" max="99"></td>
+    <td><select class="cell-select" id="ef-home">${teamOptions(f.div,f.home)}</select></td>
+    <td><select class="cell-select" id="ef-away">${teamOptions(f.div,f.away)}</select></td>
+    <td><input class="cell-input" type="date" id="ef-date" value="${dateVal}"></td>
+    <td><select class="cell-select" id="ef-time">
+      <option value="">—</option>
+      <option value="7:00pm" ${f.time==="7:00pm"?"selected":""}>7:00pm</option>
+      <option value="7:45pm" ${f.time==="7:45pm"?"selected":""}>7:45pm</option>
+      <option value="8:30pm" ${f.time==="8:30pm"?"selected":""}>8:30pm</option>
+    </select></td>
+    <td><select class="cell-select" id="ef-pitch">
+      <option value="">—</option>
+      <option value="2A" ${f.pitch==="2A"?"selected":""}>2A</option>
+      <option value="2B" ${f.pitch==="2B"?"selected":""}>2B</option>
+      <option value="4A" ${f.pitch==="4A"?"selected":""}>4A</option>
+      <option value="6A" ${f.pitch==="6A"?"selected":""}>6A</option>
+      <option value="6B" ${f.pitch==="6B"?"selected":""}>6B</option>
+    </select></td>
+    <td><input class="cell-input" type="text" id="ef-referee" value="${f.referee||''}" placeholder="J. Smith" maxlength="30"></td>
+    <td><div class="row-actions">
+      <button class="btn-submit" onclick="saveEditFixture('${key}')">Save</button>
+      <button class="btn-cancel" onclick="renderFixturesTable()">✕</button>
+    </div></td>`;
+};
+window.updateEditFixtureTeams=function(key){
+  const div=document.getElementById("ef-div").value;
+  ["ef-home","ef-away"].forEach(id=>{const sel=document.getElementById(id);if(sel)sel.innerHTML=teamOptions(div);});
+};
+window.saveEditFixture=function(key){
+  const div=document.getElementById("ef-div").value;
+  const home=document.getElementById("ef-home").value;
+  const away=document.getElementById("ef-away").value;
+  const mw=parseInt(document.getElementById("ef-week").value)||null;
+  const fdate=document.getElementById("ef-date").value.trim();
+  const ftime=document.getElementById("ef-time").value;
+  const pitch=document.getElementById("ef-pitch").value;
+  const referee=document.getElementById("ef-referee")?document.getElementById("ef-referee").value.trim():"";
+  if(!home||!away){toast("Select both teams");return;}
+  if(home===away){toast("Same team selected");return;}
+  let displayDate="";
+  if(fdate){const d=new Date(fdate+"T00:00:00");displayDate=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});}
+  set(ref(db,"state/fixtures/"+key),{div,home,away,matchWeek:mw,date:displayDate||null,dateRaw:fdate||null,time:ftime||null,pitch:pitch||null,referee:referee||null});
+  toast("Fixture updated");
+};
+
+// ════════════════════════════════════════
+// FROM FIXTURE — pre-populate result row
+// ════════════════════════════════════════
+window.addResultFromFixture=function(){
+  if(document.querySelector("#results-tbody tr.new-row")) return;
+  // Build a modal/selector overlay
+  const fixtures=fixturesArr().filter(f=>resultsFilter==="all"||f.div===resultsFilter);
+  if(!fixtures.length){toast("No fixtures available");return;}
+  // Sort by week
+  fixtures.sort((a,b)=>(a.matchWeek||99)-(b.matchWeek||99));
+  // Show picker modal
+  const modal=document.createElement("div");
+  modal.id="fixture-picker";
+  modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;";
+  modal.innerHTML=`<div style="background:#fff;border-radius:8px;padding:20px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:0.9rem;font-weight:700;">Select fixture</div>
+      <button onclick="document.getElementById('fixture-picker').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted-fg);">✕</button>
+    </div>
+    ${fixtures.map(f=>`
+      <div onclick="prefillFromFixture('${f._key}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px;transition:background 0.1s;" onmouseover="this.style.background='#f4f4f5'" onmouseout="this.style.background=''">
+        <span class="div-badge" data-div="${f.div}" style="flex-shrink:0">${DIVS[f.div]}</span>
+        ${f.matchWeek?`<span style="font-size:0.72rem;color:var(--muted-fg);flex-shrink:0">Wk ${f.matchWeek}</span>`:""}
+        <span style="font-weight:600;flex:1">${esc(f.home)}</span>
+        <span style="color:var(--muted-fg);font-size:0.75rem">vs</span>
+        <span style="font-weight:600;flex:1;text-align:right">${esc(f.away)}</span>
+        ${f.date?`<span style="font-size:0.7rem;color:var(--muted-fg);flex-shrink:0">${esc(f.date)}</span>`:""}
+      </div>`).join("")}
+  </div>`;
+  document.body.appendChild(modal);
+};
+window.prefillFromFixture=function(key){
+  document.getElementById("fixture-picker").remove();
+  const f=fixturesArr().find(x=>x._key===key);
+  if(!f) return;
+  const tbody=document.getElementById("results-tbody");
+  const tr=document.createElement("tr");
+  tr.className="new-row";
+  tr.innerHTML=`
+    <td><select class="cell-select" id="nr-div" onchange="updateNewRowTeams()">${divOptions(f.div)}</select></td>
+    <td><input class="cell-input" type="number" id="nr-week" value="${f.matchWeek||''}" placeholder="Wk" min="1" max="99"></td>
+    <td><select class="cell-select" id="nr-home">${teamOptions(f.div,f.home)}</select></td>
+    <td><input class="cell-input" type="number" id="nr-hg" value="0" min="0" max="99"></td>
+    <td><input class="cell-input" type="number" id="nr-ag" value="0" min="0" max="99"></td>
+    <td><select class="cell-select" id="nr-away">${teamOptions(f.div,f.away)}</select></td>
+    <td><input class="cell-input" type="text" id="nr-date" value="${f.date||''}" placeholder="dd/mm/yyyy"></td>
+    <td><div class="row-actions">
+      <button class="btn-submit" onclick="submitResult()">Save</button>
+      <button class="btn-cancel" onclick="cancelNewRow('results')">✕</button>
+    </div></td>`;
+  tbody.appendChild(tr);
+  tr.scrollIntoView({behavior:"smooth",block:"nearest"});
+  document.getElementById("nr-hg").focus();
+};
 
 window.cancelNewRow=function(table){
   const tbody=document.getElementById(table+"-tbody");
