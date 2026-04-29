@@ -269,6 +269,10 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
             <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;color:var(--foreground);">Starting week</label>
             <input type="number" id="gen-start-week" value="1" min="1" max="99" style="background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;width:80px;text-align:center;">
           </div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;">
+            <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;color:var(--foreground);">First match date <span style="font-weight:400;color:var(--muted-fg);">(Mon)</span></label>
+            <input type="date" id="gen-start-date" style="background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;">
+          </div>
           <button class="btn-sm" onclick="previewGeneratedFixtures()" style="height:36px;padding:0 18px;">Preview fixtures</button>
         </div>
       </div>
@@ -282,6 +286,13 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
           <button class="div-pill" data-div="div1"  onclick="setFixturesDiv('div1',this)">League One</button>
           <button class="div-pill" data-div="div2"  onclick="setFixturesDiv('div2',this)">League Two</button>
         </div>
+      </div>
+
+      <!-- Match Week Dates card -->
+      <div class="season-card" style="margin-bottom:20px;">
+        <div class="season-card-title">Match Week Dates</div>
+        <p style="font-size:0.82rem;color:var(--muted-fg);margin:8px 0 14px;">Adjust a match week date here — all fixtures in that week update automatically. Useful for public holidays or postponements.</p>
+        <div id="matchweek-dates-grid"></div>
       </div>
       <div class="sheet-wrap">
         <div style="overflow-x:auto">
@@ -767,7 +778,58 @@ window.deleteResult=function(key){if(!confirm("Delete this result?"))return;dele
 // ════════════════════════════════════════
 // FIXTURES TABLE
 // ════════════════════════════════════════
+// ── MATCH WEEK DATES ──
+function renderMatchWeekDates(){
+  const c=document.getElementById("matchweek-dates-grid");
+  if(!c) return;
+
+  // Gather all unique match weeks across all fixtures
+  const weekMap={}; // weekNum -> {dateRaw, date, fixtures:[]}
+  fixturesArr().forEach(f=>{
+    if(!f.matchWeek) return;
+    if(!weekMap[f.matchWeek]) weekMap[f.matchWeek]={dateRaw:f.dateRaw||"",date:f.date||"",fixtures:[]};
+    weekMap[f.matchWeek].fixtures.push(f);
+    // Use whichever fixture has a dateRaw
+    if(f.dateRaw&&!weekMap[f.matchWeek].dateRaw) weekMap[f.matchWeek].dateRaw=f.dateRaw;
+  });
+
+  const weeks=Object.keys(weekMap).map(Number).sort((a,b)=>a-b);
+  if(!weeks.length){c.innerHTML=`<div style="color:var(--muted-fg);font-size:0.8rem;">No scheduled weeks yet — generate fixtures first.</div>`;return;}
+
+  c.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+    ${weeks.map(wk=>`
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:0.68rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted-fg);">Week ${wk} <span style="font-weight:400;">(${weekMap[wk].fixtures.length} fixtures)</span></label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="wkdate-${wk}" value="${weekMap[wk].dateRaw||""}"
+            style="flex:1;background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;min-width:0;">
+          <button class="btn-sm" onclick="updateWeekDate(${wk})" style="height:32px;padding:0 12px;font-size:0.72rem;flex-shrink:0;">Set</button>
+        </div>
+      </div>`).join("")}
+  </div>`;
+}
+
+window.updateWeekDate=function(wk){
+  const raw=document.getElementById("wkdate-"+wk).value;
+  if(!raw){toast("Pick a date first");return;}
+  const d=new Date(raw+"T00:00:00");
+  const display=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+
+  const affected=fixturesArr().filter(f=>f.matchWeek===wk);
+  if(!affected.length){toast("No fixtures in that week");return;}
+
+  affected.forEach(f=>{
+    set(ref(db,"state/fixtures/"+f._key),{
+      ...f,_key:undefined,
+      date:display,
+      dateRaw:raw
+    });
+  });
+  toast(`Week ${wk} updated to ${display} (${affected.length} fixtures) ✓`);
+};
+
 function renderFixturesTable(){
+  renderMatchWeekDates();
   const tbody=document.getElementById("fixtures-tbody");
   let rows=fixturesArr();
   if(fixturesFilter!=="all") rows=rows.filter(f=>f.div===fixturesFilter);
@@ -1254,46 +1316,78 @@ window.unmarkWeekComplete=function(key){
 let _pendingGeneratedFixtures=null;
 let _pendingGeneratedDiv=null;
 let _pendingGeneratedStart=null;
+let _pendingGeneratedDates=null;
 
 window.previewGeneratedFixtures=function(){
   const div=document.getElementById("gen-div").value;
   const startWeek=parseInt(document.getElementById("gen-start-week").value)||1;
+  const startDateRaw=document.getElementById("gen-start-date").value;
   const teams=state.teams[div]||[];
   if(teams.length<2){toast("Need at least 2 teams in this division");return;}
 
-  // Build double round-robin: each team plays every other team home AND away
-  // Use circle/round-robin algorithm for home fixtures, then reverse for away
-  const allFixtures=[];
-  for(let i=0;i<teams.length;i++){
-    for(let j=0;j<teams.length;j++){
-      if(i!==j) allFixtures.push({home:teams[i],away:teams[j]});
+  // ── Circle method round-robin ──
+  // Guarantees every team plays exactly once per round
+  // N teams → N-1 rounds per half; odd N adds a bye (team sits out)
+  let t=[...teams];
+  const hasBye=(t.length%2===1);
+  if(hasBye) t.push("__BYE__");
+  const n=t.length;
+  const fixed=t[0];
+  let rotating=t.slice(1);
+  const halfRounds=[];
+
+  for(let r=0;r<n-1;r++){
+    const round=[];
+    const circle=[fixed,...rotating];
+    for(let i=0;i<n/2;i++){
+      const home=circle[i];
+      const away=circle[n-1-i];
+      if(home!=="__BYE__"&&away!=="__BYE__") round.push({home,away});
     }
+    halfRounds.push(round);
+    rotating=[rotating[rotating.length-1],...rotating.slice(0,-1)]; // rotate right
   }
 
-  // Distribute across weeks: max matches per week = floor(N/2)
-  const perWeek=Math.floor(teams.length/2);
-  const weeks=[];
-  let week=[];
-  // Track who has played this round
-  for(const fix of allFixtures){
-    // Check no team plays twice in same week
-    const busy=new Set(week.flatMap(f=>[f.home,f.away]));
-    if(!busy.has(fix.home)&&!busy.has(fix.away)){
-      week.push(fix);
-      if(week.length>=perWeek){weeks.push([...week]);week=[];}
-    } else {
-      // Start a new week
-      if(week.length>0){weeks.push([...week]);week=[];}
-      week.push(fix);
-    }
-  }
-  if(week.length>0)weeks.push(week);
+  // Full season: first half + second half (home/away swapped)
+  const allRounds=[
+    ...halfRounds,
+    ...halfRounds.map(round=>round.map(f=>({home:f.away,away:f.home})))
+  ];
 
-  _pendingGeneratedFixtures=weeks;
+  // Calculate dates per week
+  const weekDates=allRounds.map((_,wi)=>{
+    if(!startDateRaw) return {display:null,raw:null};
+    const d=new Date(startDateRaw+"T00:00:00");
+    d.setDate(d.getDate()+wi*7);
+    return {
+      raw:d.toISOString().split("T")[0],
+      display:d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})
+    };
+  });
+
+  // ── Season-wide referee rotation ──
+  const seasonRefCount={};
+  teams.forEach(t=>{seasonRefCount[t]=0;});
+
+  const weeksWithRefs=allRounds.map(round=>{
+    const weekBusy=new Set();
+    return round.map(f=>{
+      const eligible=teams.filter(t=>t!==f.home&&t!==f.away&&!weekBusy.has(t));
+      eligible.sort((a,b)=>(seasonRefCount[a]||0)-(seasonRefCount[b]||0)||a.localeCompare(b));
+      const referee=eligible[0]||null;
+      if(referee){seasonRefCount[referee]++;weekBusy.add(referee);}
+      return {...f,referee};
+    });
+  });
+
+  _pendingGeneratedFixtures=weeksWithRefs;
   _pendingGeneratedDiv=div;
   _pendingGeneratedStart=startWeek;
+  _pendingGeneratedDates=weekDates;
 
-  // Show preview modal
+  const totalFixtures=weeksWithRefs.reduce((s,w)=>s+w.length,0);
+  const halfLen=halfRounds.length;
+
   let existingModal=document.getElementById("gen-modal-overlay");
   if(existingModal)existingModal.remove();
 
@@ -1304,25 +1398,31 @@ window.previewGeneratedFixtures=function(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div>
         <div style="font-size:1rem;font-weight:700;">Generated fixtures — ${esc(DIVS[div])}</div>
-        <div style="font-size:0.75rem;color:var(--muted-fg);margin-top:2px;">${allFixtures.length} fixtures across ${weeks.length} weeks starting Week ${startWeek}</div>
+        <div style="font-size:0.75rem;color:var(--muted-fg);margin-top:2px;">${totalFixtures} fixtures · ${weeksWithRefs.length} weeks · every team plays every week</div>
       </div>
       <button onclick="document.getElementById('gen-modal-overlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--muted-fg);">✕</button>
     </div>
-    ${weeks.map((wk,wi)=>`
+    ${weeksWithRefs.map((wk,wi)=>`
       <div class="gen-week-group">
-        <div class="gen-week-label">Match Week ${startWeek+wi}</div>
-        ${wk.map(f=>{
-          const eligible=teams.filter(t=>t!==f.home&&t!==f.away);
-          return `<div class="gen-fixture-row">
-            <span style="flex:1;font-weight:600;text-align:right;">${esc(f.home)}</span>
-            <span style="color:var(--muted-fg);font-size:0.75rem;flex-shrink:0;">vs</span>
-            <span style="flex:1;font-weight:600;">${esc(f.away)}</span>
-            <span style="font-size:0.7rem;color:var(--muted-fg);flex-shrink:0;">Ref: ${esc(eligible[0]||"TBC")}</span>
-          </div>`;}).join("")}
+        <div class="gen-week-label" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Week ${startWeek+wi}${wi===halfLen?` <span style="background:#dbeafe;color:#1d4ed8;font-size:0.6rem;padding:1px 6px;border-radius:9999px;margin-left:6px;font-weight:700;">↩ Second half</span>`:""}
+          </span>
+          ${weekDates[wi]&&weekDates[wi].display?`<span style="font-size:0.68rem;font-weight:400;color:var(--muted-fg);">${weekDates[wi].display}</span>`:""}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+          <colgroup><col style="width:38%"><col style="width:6%"><col style="width:38%"><col style="width:18%"></colgroup>
+          ${wk.map(f=>`
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 4px;font-weight:600;text-align:right;">${esc(f.home)}</td>
+              <td style="padding:6px 4px;text-align:center;color:var(--muted-fg);font-size:0.72rem;">vs</td>
+              <td style="padding:6px 4px;font-weight:600;">${esc(f.away)}</td>
+              <td style="padding:6px 4px;font-size:0.7rem;color:var(--muted-fg);white-space:nowrap;">🏴 ${esc(f.referee||"TBC")}</td>
+            </tr>`).join("")}
+        </table>
       </div>`).join("")}
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
       <button onclick="document.getElementById('gen-modal-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;cursor:pointer;">Cancel</button>
-      <button onclick="saveGeneratedFixtures()" style="background:var(--primary);color:#fff;border:none;border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Save all ${allFixtures.length} fixtures</button>
+      <button onclick="saveGeneratedFixtures()" style="background:var(--primary);color:#fff;border:none;border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Save all ${totalFixtures} fixtures</button>
     </div>
   </div>`;
   document.body.appendChild(overlay);
@@ -1333,26 +1433,18 @@ window.saveGeneratedFixtures=function(){
   const startWeek=_pendingGeneratedStart;
   const div=_pendingGeneratedDiv;
   if(!weeks||!div){toast("Nothing to save");return;}
-  const allTeams=state.teams[div]||[];
   let count=0;
   weeks.forEach((wk,wi)=>{
-    // Track referee load this week to spread evenly
-    const weekRefCount={};
-    allTeams.forEach(t=>{weekRefCount[t]=0;});
+    const wkDate=(_pendingGeneratedDates&&_pendingGeneratedDates[wi])||{};
     wk.forEach(f=>{
-      // Eligible refs: not playing in this fixture
-      const eligible=allTeams.filter(t=>t!==f.home&&t!==f.away);
-      // Pick the one with fewest referee duties this week
-      eligible.sort((a,b)=>(weekRefCount[a]||0)-(weekRefCount[b]||0));
-      const referee=eligible[0]||null;
-      if(referee) weekRefCount[referee]=(weekRefCount[referee]||0)+1;
-      pushFixture({div,home:f.home,away:f.away,matchWeek:startWeek+wi,date:null,dateRaw:null,time:null,pitch:null,referee:referee||null});
+      pushFixture({div,home:f.home,away:f.away,matchWeek:startWeek+wi,date:wkDate.display||null,dateRaw:wkDate.raw||null,time:"7:00pm",pitch:null,referee:f.referee||null});
       count++;
     });
   });
   _pendingGeneratedFixtures=null;
+  _pendingGeneratedDates=null;
   document.getElementById("gen-modal-overlay").remove();
-  toast(`${count} fixtures saved with referee assignments ✓`);
+  toast(`${count} fixtures saved ✓`);
 };
 
 // ════════════════════════════════════════
@@ -1602,6 +1694,18 @@ function renderWeatherTab(){
     }
   }
 }
+
+
+// Pre-fill generator date picker with next Monday
+(function(){
+  const el=document.getElementById("gen-start-date");
+  if(!el) return;
+  const d=new Date();
+  const day=d.getDay(); // 0=Sun,1=Mon...
+  const daysUntilMon=day===1?7:(8-day)%7||7;
+  d.setDate(d.getDate()+daysUntilMon);
+  el.value=d.toISOString().split("T")[0];
+})();
 
 setLoading(true);
 </script>
