@@ -148,6 +148,13 @@ tr.top-row td.td-team{border-left:3px solid #16a34a;}
 .fix-meta-value{font-size:0.82rem;font-weight:500;color:var(--foreground);}
 .fixtures-empty{padding:28px 0;color:var(--muted-fg);font-size:0.8rem;}
 
+
+/* ── ALERT BANNER ── */
+.alert-banner{background:#fef3c7;border-bottom:2px solid #f59e0b;padding:10px var(--pad);display:flex;align-items:center;gap:10px;}
+.alert-banner-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;gap:10px;width:100%;}
+.alert-icon{font-size:1.1rem;flex-shrink:0;}
+.alert-text{font-size:0.82rem;font-weight:600;color:#92400e;flex:1;}
+
 /* ── REGISTER ── */
 .register-btn{background:var(--primary);color:#fff;border:none;border-radius:var(--radius);padding:7px 14px;font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s;flex-shrink:0;}
 .register-btn:hover{background:#b91c1c;}
@@ -267,6 +274,7 @@ tr.top-row td.td-team{border-left:3px solid #16a34a;}
     <button class="main-tab"        onclick="setMainTab('results',this)">Results</button>
   </div>
 </div>
+<div id="alert-banner-container"></div>
 <div class="mobile-nav">
   <select class="mobile-select" id="mobile-div-select" onchange="mobileSetDiv(this.value)">
     <option value="prem">Premier League</option>
@@ -322,6 +330,15 @@ function pushFixture(f){push(ref(db,"state/fixtures"),f);}
 function deleteFixtureFromDB(k){remove(ref(db,"state/fixtures/"+k));}
 function resultsArray(){if(!state.results)return[];return Object.entries(state.results).map(([k,v])=>({...v,_key:k}));}
 function fixturesArray(){if(!state.fixtures)return[];return Object.entries(state.fixtures).map(([k,v])=>({...v,_key:k}));}
+function renderBanner(){
+  const c=document.getElementById("alert-banner-container");
+  if(!c) return;
+  if(state.banner&&state.banner.message){
+    c.innerHTML=`<div class="alert-banner"><div class="alert-banner-inner"><span class="alert-icon">⚠️</span><span class="alert-text">${esc(state.banner.message)}</span></div></div>`;
+  } else {
+    c.innerHTML="";
+  }
+}
 function encodeKey(s){return encodeURIComponent(s).replace(/[.]/g,"%2E");}
 function teamAvatar(name,size){
   size=size||22;
@@ -342,7 +359,7 @@ onValue(ref(db,"state"),(snapshot)=>{
     const rows=calcTableFrom(state,div);
     rows.forEach((t,i)=>{prevPositions[div][t.name]=i+1;});
   }
-  if(data){state.teams=data.teams||{prem:[],champ:[],div1:[],div2:[]};state.results=data.results||{};state.fixtures=data.fixtures||{};state.logos=data.logos||{};currentSeasonName=data.currentSeason||"";state.completedWeeks=data.completedWeeks||{};}
+  if(data){state.teams=data.teams||{prem:[],champ:[],div1:[],div2:[]};state.results=data.results||{};state.fixtures=data.fixtures||{};state.logos=data.logos||{};currentSeasonName=data.currentSeason||"";state.completedWeeks=data.completedWeeks||{};state.banner=data.banner||null;state.postponedWeeks=data.postponedWeeks||{};}
   else{state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{}};}
   setLoading(false);render();
 });
@@ -400,6 +417,7 @@ function getForm(team,div){
   return last5;
 }
 function render(){
+  renderBanner();
   if(currentMainTab==="table")renderTable();
   if(currentMainTab==="fixtures")renderFixtures();
   if(currentMainTab==="results")renderResults();
@@ -472,7 +490,8 @@ function renderTable(){
 function renderFixtures(){
   const c=document.getElementById("panel-fixtures");
   const completedNums=Object.keys(state.completedWeeks||{}).map(k=>parseInt(k.replace("week_","")));
-  const divFix=fixturesArray().filter(f=>f.div===currentDiv&&!completedNums.includes(f.matchWeek));
+  const postponedNums=Object.keys(state.postponedWeeks||{}).map(k=>parseInt(k.replace("week_","")));
+  const divFix=fixturesArray().filter(f=>f.div===currentDiv&&!completedNums.includes(f.matchWeek)&&!postponedNums.includes(f.matchWeek));
   if(!divFix.length){
     c.innerHTML=`<div class="div-banner" data-div="${currentDiv}"><div><div class="div-banner-title">${DIVS[currentDiv].label}</div><div class="div-banner-sub">Upcoming Fixtures</div></div></div><div class="fixtures-empty">No fixtures scheduled yet.</div>`;
     return;

@@ -201,6 +201,7 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
       <button class="admin-tab"        onclick="setAdminTab('results',this)">Results</button>
       <button class="admin-tab"        onclick="setAdminTab('fixtures',this)">Fixtures</button>
       <button class="admin-tab"        onclick="setAdminTab('pending',this)" id="pending-tab">Pending</button>
+      <button class="admin-tab"        onclick="setAdminTab('weather',this)">Weather</button>
       <button class="admin-tab"        onclick="setAdminTab('season',this)">Season</button>
     </div>
   </div>
@@ -325,6 +326,49 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
       <div id="pending-list"></div>
     </div>
 
+
+    <!-- WEATHER / WASHOUT -->
+    <div class="panel" id="admin-panel-weather">
+      <div class="page-header"><div class="page-title">Weather & Washout</div></div>
+
+
+
+      <!-- Washout tool -->
+      <div class="season-card" style="margin-bottom:16px;">
+        <div class="season-card-title">Postpone a Round</div>
+        <p style="font-size:0.82rem;color:var(--muted-fg);margin:8px 0 14px;">
+          Shifts the selected match week and all subsequent weeks forward. Updates fixture dates and places a cancellation banner on the public site.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;">
+            <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;">Match Week to postpone</label>
+            <select id="washout-week" style="background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;"></select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:100px;">
+            <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;">Push back (weeks)</label>
+            <input type="number" id="washout-weeks" value="1" min="1" max="4" style="background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;width:80px;text-align:center;">
+          </div>
+          <button class="btn-sm" onclick="previewWashout()" style="height:36px;padding:0 18px;">Preview changes</button>
+        </div>
+      </div>
+
+      <!-- Banner control -->
+      <div class="season-card" style="margin-bottom:16px;">
+        <div class="season-card-title">Public Site Banner</div>
+        <p style="font-size:0.82rem;color:var(--muted-fg);margin:8px 0 14px;">Shows a cancellation banner on the public site. Clear it once the situation is resolved.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:200px;">
+            <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;display:block;margin-bottom:4px;">Banner message</label>
+            <input type="text" id="banner-msg" placeholder="e.g. This week's fixtures are cancelled due to weather." style="background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;width:100%;">
+          </div>
+          <button class="btn-sm" onclick="setBanner()" style="height:36px;padding:0 16px;">Set banner</button>
+          <button class="btn-sm" onclick="clearBanner()" style="height:36px;padding:0 16px;background:#6b7280;">Clear banner</button>
+        </div>
+        <div id="banner-status" style="margin-top:10px;font-size:0.78rem;color:var(--muted-fg);"></div>
+      </div>
+
+    </div>
+
     <!-- SEASON -->
     <div class="panel" id="admin-panel-season">
       <div class="page-header"><div class="page-title">Season Management</div></div>
@@ -398,7 +442,7 @@ const db=getDatabase(app);
 const DIVS={prem:"Premier League",champ:"Championship",div1:"League One",div2:"League Two"};
 const DIV_KEYS=["prem","champ","div1","div2"];
 
-let state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{},logos:{},completedWeeks:{}};
+let state={teams:{prem:[],champ:[],div1:[],div2:[]},results:{},fixtures:{},logos:{},completedWeeks:{},banner:null};
 let pendingResults={};
 let currentSeasonName="";
 let archivedSeasons={};
@@ -437,6 +481,7 @@ onValue(ref(db,"state"),(snapshot)=>{
     state.fixtures=data.fixtures||{};
     state.logos  =data.logos  ||{};
     state.completedWeeks=data.completedWeeks||{};
+    state.banner=data.banner||null;
     pendingResults=data.pendingResults||{};
     currentSeasonName=data.currentSeason||"";
     archivedSeasons=data.seasons||{};
@@ -449,6 +494,7 @@ onValue(ref(db,"state"),(snapshot)=>{
   if(currentAdminTab==="results") renderResultsTable();
   if(currentAdminTab==="fixtures") renderFixturesTable();
   if(currentAdminTab==="season") renderSeasonTab();
+  if(currentAdminTab==="weather") renderWeatherTab();
   if(currentAdminTab==="pending") renderPendingResults();
   // Update pending badge
   const pCount=Object.keys(pendingResults).length;
@@ -483,6 +529,7 @@ function setAdminTab(tab,el){
   if(tab==="results") renderResultsTable();
   if(tab==="fixtures") renderFixturesTable();
   if(tab==="season") renderSeasonTab();
+  if(tab==="weather"){renderWeatherTab();}
   if(tab==="pending"){renderPendingResults();generateQR();}
 }
 window.setAdminTab=setAdminTab;
@@ -1413,6 +1460,148 @@ window.printQR=function(){
     setTimeout(()=>win.print(),600);
   },400);
 };
+
+// ════════════════════════════════════════
+// WEATHER / WASHOUT / NOTIFICATIONS
+// ════════════════════════════════════════
+
+// ── EmailJS removed ──
+
+// ── Banner ──
+window.setBanner=function(){
+  const msg=document.getElementById("banner-msg").value.trim();
+  if(!msg){toast("Enter a banner message");return;}
+  set(ref(db,"state/banner"),{message:msg,setAt:Date.now()});
+  toast("Banner set on public site");
+};
+window.clearBanner=function(){
+  remove(ref(db,"state/banner"));
+  document.getElementById("banner-msg").value="";
+  toast("Banner cleared");
+};
+
+
+
+// ── Washout week selector ──
+function populateWashoutWeeks(){
+  const sel=document.getElementById("washout-week");
+  if(!sel) return;
+  const weeks=new Set();
+  fixturesArr().forEach(f=>{if(f.matchWeek) weeks.add(f.matchWeek);});
+  const sorted=[...weeks].sort((a,b)=>a-b);
+  sel.innerHTML=sorted.length
+    ? sorted.map(w=>`<option value="${w}">Week ${w}</option>`).join("")
+    : `<option value="">No scheduled weeks found</option>`;
+}
+
+// ── Preview washout modal ──
+let _pendingWashout=null;
+
+window.previewWashout=function(){
+  const fromWeek=parseInt(document.getElementById("washout-week").value);
+  const pushBy=parseInt(document.getElementById("washout-weeks").value)||1;
+  if(!fromWeek){toast("Select a match week");return;}
+
+  const affected=fixturesArr().filter(f=>f.matchWeek&&f.matchWeek>=fromWeek);
+  if(!affected.length){toast("No fixtures found from that week onwards");return;}
+
+  // Group by week for preview
+  const byWeek={};
+  affected.forEach(f=>{
+    const wk=f.matchWeek;
+    if(!byWeek[wk]) byWeek[wk]=[];
+    byWeek[wk].push(f);
+  });
+
+  _pendingWashout={fromWeek,pushBy,affected};
+
+  // Build modal
+  let existing=document.getElementById("washout-modal");
+  if(existing) existing.remove();
+
+  const overlay=document.createElement("div");
+  overlay.id="washout-modal";
+  overlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;";
+  overlay.innerHTML=`<div style="background:#fff;border-radius:10px;padding:24px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-size:1rem;font-weight:700;">Postpone from Week ${fromWeek}</div>
+        <div style="font-size:0.75rem;color:var(--muted-fg);margin-top:2px;">${affected.length} fixtures will shift forward by ${pushBy} week${pushBy>1?"s":""}</div>
+      </div>
+      <button onclick="document.getElementById('washout-modal').remove()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--muted-fg);">✕</button>
+    </div>
+    ${Object.keys(byWeek).sort((a,b)=>a-b).map(wk=>`
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted-fg);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:6px;display:flex;justify-content:space-between;">
+          <span>Week ${wk}</span>
+          <span style="color:var(--primary);">→ Week ${parseInt(wk)+pushBy}</span>
+        </div>
+        ${byWeek[wk].map(f=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:0.82rem;border-bottom:1px solid var(--border);">
+            <span class="div-badge" data-div="${f.div}">${DIVS[f.div]}</span>
+            <span style="flex:1;font-weight:600;">${esc(f.home)}</span>
+            <span style="color:var(--muted-fg);font-size:0.72rem;">vs</span>
+            <span style="flex:1;font-weight:600;">${esc(f.away)}</span>
+            ${f.date?`<span style="font-size:0.7rem;color:var(--muted-fg);">${esc(f.date)}</span>`:""}
+          </div>`).join("")}
+      </div>`).join("")}
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <button onclick="document.getElementById('washout-modal').remove()" style="background:none;border:1px solid var(--border);border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;cursor:pointer;">Cancel</button>
+      <button onclick="confirmWashout()" style="background:var(--primary);color:#fff;border:none;border-radius:var(--radius);padding:9px 18px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Confirm reschedule</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+};
+
+window.confirmWashout=function(){
+  if(!_pendingWashout){toast("Nothing to apply");return;}
+  const {fromWeek,pushBy,affected}=_pendingWashout;
+
+  // Update each fixture's matchWeek (and date if dateRaw exists)
+  affected.forEach(f=>{
+    const newWeek=f.matchWeek+pushBy;
+    let newDate=null, newDateRaw=null;
+    if(f.dateRaw){
+      try{
+        const d=new Date(f.dateRaw+"T00:00:00");
+        d.setDate(d.getDate()+pushBy*7);
+        newDateRaw=d.toISOString().split("T")[0];
+        newDate=d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+      }catch(e){}
+    }
+    set(ref(db,"state/fixtures/"+f._key),{
+      ...f,
+      _key:undefined,
+      matchWeek:newWeek,
+      date:newDate||f.date||null,
+      dateRaw:newDateRaw||f.dateRaw||null
+    });
+  });
+
+  // Also mark week as postponed (adds a flag, doesn't hide like completed)
+  set(ref(db,"state/postponedWeeks/week_"+fromWeek),true);
+
+  document.getElementById("washout-modal").remove();
+
+  toast(`${affected.length} fixtures rescheduled ✓`);
+  _pendingWashout=null;
+};
+
+
+
+function renderWeatherTab(){
+  populateWashoutWeeks();
+  // Show current banner status
+  const statusEl=document.getElementById("banner-status");
+  if(statusEl){
+    if(state.banner&&state.banner.message){
+      statusEl.innerHTML=`<span style="color:var(--primary);font-weight:600;">Active banner:</span> "${esc(state.banner.message)}"`;
+      document.getElementById("banner-msg").value=state.banner.message;
+    } else {
+      statusEl.textContent="No active banner.";
+    }
+  }
+}
 
 setLoading(true);
 </script>
