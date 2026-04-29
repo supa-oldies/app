@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Supa Oldies</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --background:#ffffff; --foreground:#09090b;
@@ -344,7 +345,7 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
         <p style="font-size:0.82rem;color:var(--muted-fg);margin:8px 0 14px;">Archives the current season, calculates promotions &amp; demotions, then lets you review and confirm before anything changes.</p>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <input type="text" id="new-season-name-input" placeholder="e.g. Summer 2026" style="max-width:260px;background:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;flex:1;">
-          <button class="btn-sm" onclick="previewNewSeason()" style="height:36px;padding:0 18px;background:#1a1a2e;">Preview moves</button>
+          <button class="btn-sm" onclick="previewNewSeason()" style="height:36px;padding:0 18px;background:#1a1a2e;color:#fff;">Preview moves</button>
         </div>
       </div>
 
@@ -1376,11 +1377,9 @@ function generateQR(){
     :window.location.origin;
   const refereeUrl=origin+"/referee";
   document.getElementById("qr-url-display").textContent=refereeUrl;
-
-  // Use Google Charts QR API
   const c=document.getElementById("qr-code-container");
-  const encoded=encodeURIComponent(refereeUrl);
-  c.innerHTML=`<img src="https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${encoded}&choe=UTF-8" width="180" height="180" alt="QR Code" style="display:block;">`;
+  c.innerHTML="";
+  new QRCode(c,{text:refereeUrl,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
 }
 
 window.printQR=function(){
@@ -1388,22 +1387,29 @@ window.printQR=function(){
     ?"https://supa-oldies.vercel.app"
     :window.location.origin;
   const refereeUrl=origin+"/referee";
-  const encoded=encodeURIComponent(refereeUrl);
-  const win=window.open("","_blank");
-  win.document.write(`<!DOCTYPE html><html><head><title>Referee QR Code</title>
-  <style>body{font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;}
-  h2{font-size:1.4rem;margin-bottom:6px;}p{color:#666;font-size:0.85rem;margin-bottom:20px;text-align:center;}
-  img{border:1px solid #eee;border-radius:8px;padding:12px;}
-  .url{margin-top:14px;font-size:0.75rem;color:#999;word-break:break-all;max-width:240px;text-align:center;}
-  </style></head>
-  <body>
-  <h2>⚽ Supa Oldies</h2>
-  <p>Scan to submit today's match score</p>
-  <img src="https://chart.googleapis.com/chart?chs=240x240&cht=qr&chl=${encoded}&choe=UTF-8" width="240" height="240">
-  <div class="url">${refereeUrl}</div>
-  </body></html>`);
-  win.document.close();
-  setTimeout(()=>win.print(),500);
+  const tmp=document.createElement("div");
+  tmp.style.cssText="position:fixed;left:-9999px;top:0;";
+  document.body.appendChild(tmp);
+  new QRCode(tmp,{text:refereeUrl,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});
+  setTimeout(()=>{
+    const img=tmp.querySelector("img");
+    const src=img?img.src:"";
+    document.body.removeChild(tmp);
+    const win=window.open("","_blank");
+    win.document.write("<!DOCTYPE html><html><head><title>Referee QR Code</title>"
+      +"<style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;}"
+      +"h2{font-size:1.4rem;margin-bottom:6px;}p{color:#666;font-size:0.85rem;margin-bottom:20px;text-align:center;}"
+      +"img{border:1px solid #eee;border-radius:8px;padding:12px;}"
+      +".url{margin-top:14px;font-size:0.75rem;color:#999;word-break:break-all;max-width:260px;text-align:center;}"
+      +"</style></head><body>"
+      +"<h2>Supa Oldies</h2>"
+      +"<p>Scan to submit today's match score</p>"
+      +(src?"<img src='"+src+"' width='240' height='240'>":"<p>QR generation failed</p>")
+      +"<div class='url'>"+refereeUrl+"</div>"
+      +"</body></html>");
+    win.document.close();
+    setTimeout(()=>win.print(),600);
+  },400);
 };
 
 setLoading(true);
