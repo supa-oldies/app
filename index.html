@@ -240,22 +240,40 @@ tr.top-row td.td-team{border-left:3px solid #16a34a;}
 <!-- Register modal -->
 <div class="register-overlay" id="register-overlay">
   <div class="register-modal">
-    <div id="register-form-view">
-      <h2>Register to Play</h2>
-      <p>Interested in joining? Fill in your details and we'll be in touch.</p>
-      <div class="register-field"><label>Full Name</label><input type="text" id="reg-name" placeholder="Your name" maxlength="60"></div>
-      <div class="register-field"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.com"></div>
-      <div class="register-field"><label>Phone Number</label><input type="tel" id="reg-phone" placeholder="+61 4xx xxx xxx"></div>
-      <div class="register-field"><label>Play as</label><select id="reg-play-as"><option value="Individual">Individual</option><option value="Team">Team</option><option value="Both">Both</option></select></div>
-      <div id="reg-error" style="color:#dc2626;font-size:0.75rem;margin-bottom:8px;display:none;"></div>
-      <button class="register-submit" onclick="submitRegister()">Submit Registration</button>
-      <button class="register-cancel" onclick="closeRegister()">Cancel</button>
-    </div>
+    <!-- Success state -->
     <div id="register-success-view" class="register-success" style="display:none;">
       <div class="success-icon">🎉</div>
       <h3>Thanks for registering!</h3>
       <p>We'll be in touch soon about joining the league.</p>
       <button class="register-submit" style="margin-top:16px;" onclick="closeRegister()">Close</button>
+    </div>
+    <!-- Form state -->
+    <div id="register-form-view">
+      <h2>Register to Play</h2>
+      <p>Interested in joining? Fill in your details and we'll be in touch.</p>
+      <div class="register-field">
+        <label for="reg-name">Full Name</label>
+        <input type="text" id="reg-name" name="name" placeholder="Your name" maxlength="60">
+      </div>
+      <div class="register-field">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" name="email" placeholder="your@email.com">
+      </div>
+      <div class="register-field">
+        <label for="reg-phone">Phone Number</label>
+        <input type="tel" id="reg-phone" name="phone" placeholder="+61 4xx xxx xxx">
+      </div>
+      <div class="register-field">
+        <label for="reg-play-as">Play as</label>
+        <select id="reg-play-as" name="play_as">
+          <option value="Individual">Individual</option>
+          <option value="Team">Team</option>
+          <option value="Both">Both</option>
+        </select>
+      </div>
+      <div id="reg-error" style="color:#dc2626;font-size:0.75rem;margin-bottom:8px;display:none;"></div>
+      <button class="register-submit" id="reg-submit-btn" onclick="submitRegister()">Submit Registration</button>
+      <button class="register-cancel" onclick="closeRegister()">Cancel</button>
     </div>
   </div>
 </div>
@@ -425,7 +443,6 @@ function render(){
 function renderTable(){
   const rows=calcTable(currentDiv);
   const c=document.getElementById("panel-table");
-  const medals=["","",""];
   const total=rows.length;
   const showPromo=currentDiv!=="prem"&&total>=2;
   const showReleg=total>=10;
@@ -453,7 +470,7 @@ function renderTable(){
             const gdClass=t.gd>0?"gd-pos":t.gd<0?"gd-neg":"gd-zero";
             const gdStr=t.gd>0?"+"+t.gd:String(t.gd);
             const formHTML=form.map(f=>`<div class="form-pip ${f}">${f==="blank"?"":f}</div>`).join("");
-            const prefix=i<3?`<span style="margin-right:3px">${medals[i]}</span>`:"";
+            const prefix="";
             const promoLine="";
             const relegLine=showReleg&&i===8?"zone-releg-border":"";
             const bottomLine=showBottom&&i===total-2?"zone-releg-border":"";
@@ -530,7 +547,10 @@ function renderFixtures(){
 function renderResults(){
   const divR=resultsArray().filter(r=>r.div===currentDiv);
   const c=document.getElementById("panel-results");
-  if(!divR.length){c.innerHTML=`<div class="results-empty">No results recorded for ${DIVS[currentDiv].label} yet.</div>`;return;}
+  if(!divR.length){
+    c.innerHTML=`<div class="div-banner" data-div="${currentDiv}"><div><div class="div-banner-title">${DIVS[currentDiv].label}</div><div class="div-banner-sub">${currentSeasonName||"Six-A-Side"}</div></div></div><div style="background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:28px 16px;color:var(--muted-fg);font-size:0.82rem;margin-bottom:24px;box-shadow:var(--shadow);">No results recorded yet.</div>`;
+    return;
+  }
   const grouped={};
   [...divR].reverse().forEach(r=>{
     const key=r.matchWeek!=null?"Week "+r.matchWeek:"No Match Week";
@@ -541,24 +561,30 @@ function renderResults(){
     if(!isNaN(na)&&!isNaN(nb))return nb-na;
     if(!isNaN(na))return -1;if(!isNaN(nb))return 1;return 0;
   });
-  c.innerHTML=sortedKeys.map(key=>`
-    <div class="mw-group">
-      <div class="mw-heading">${key}</div>
-      <div class="results-list">
-        ${grouped[key].map(r=>`
-          <div class="result-row">
-            <span class="res-div-badge" data-div="${r.div}">${DIVS[r.div].short}</span>
-            <div class="res-teams">
-              <div class="res-team home ${r.hg>r.ag?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.home,20)}${esc(r.home)}</div>
-              ${r.hg>r.ag?'<span class="res-chevron">&#10095;</span>':r.ag>r.hg?'<span class="res-chevron" style="visibility:hidden">&#10095;</span>':''}
-              <div class="res-score">${r.hg} – ${r.ag}</div>
-              ${r.ag>r.hg?'<span class="res-chevron">&#10094;</span>':r.hg>r.ag?'<span class="res-chevron" style="visibility:hidden">&#10094;</span>':''}
-              <div class="res-team away ${r.ag>r.hg?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.away,20)}${esc(r.away)}</div>
-            </div>
-            <span class="res-date">${r.date}</span>
-          </div>`).join("")}
-      </div>
-    </div>`).join("");
+  c.innerHTML=`
+    <div class="div-banner" data-div="${currentDiv}">
+      <div><div class="div-banner-title">${DIVS[currentDiv].label}</div><div class="div-banner-sub">${currentSeasonName||"Six-A-Side"}</div></div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:14px 16px;margin-bottom:24px;box-shadow:var(--shadow);">
+      ${sortedKeys.map(key=>`
+        <div class="mw-group">
+          <div class="mw-heading">${key}</div>
+          <div class="results-list">
+            ${grouped[key].map(r=>`
+              <div class="result-row">
+                <span class="res-div-badge" data-div="${r.div}">${DIVS[r.div].short}</span>
+                <div class="res-teams">
+                  <div class="res-team home ${r.hg>r.ag?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.home,20)}${esc(r.home)}</div>
+                  ${r.hg>r.ag?'<span class="res-chevron">&#10095;</span>':r.ag>r.hg?'<span class="res-chevron" style="visibility:hidden">&#10095;</span>':''}
+                  <div class="res-score">${r.hg} – ${r.ag}</div>
+                  ${r.ag>r.hg?'<span class="res-chevron">&#10094;</span>':r.hg>r.ag?'<span class="res-chevron" style="visibility:hidden">&#10094;</span>':''}
+                  <div class="res-team away ${r.ag>r.hg?'winner':''}" style="display:flex;align-items:center;">${teamAvatar(r.away,20)}${esc(r.away)}</div>
+                </div>
+                <span class="res-date">${r.date}</span>
+              </div>`).join("")}
+          </div>
+        </div>`).join("")}
+    </div>`;
 }
 // Read URL params for deep linking
 (function(){
@@ -604,6 +630,7 @@ window.openRegister=function(){
   document.getElementById("reg-name").value="";
   document.getElementById("reg-email").value="";
   document.getElementById("reg-phone").value="";
+  document.getElementById("reg-play-as").selectedIndex=0;
 };
 window.closeRegister=function(){
   document.getElementById("register-overlay").classList.remove("open");
@@ -617,17 +644,35 @@ window.submitRegister=function(){
   const phone=document.getElementById("reg-phone").value.trim();
   const playAs=document.getElementById("reg-play-as").value;
   const errEl=document.getElementById("reg-error");
+  const btn=document.getElementById("reg-submit-btn");
   if(!name||!email||!phone){errEl.textContent="Please fill in all fields.";errEl.style.display="block";return;}
-  if(!email.includes("@")){errEl.textContent="Please enter a valid email.";errEl.style.display="block";return;}
+  if(!email.includes("@")){errEl.textContent="Please enter a valid email address.";errEl.style.display="block";return;}
   errEl.style.display="none";
-  // Send via mailto (opens email client) as a fallback — or use Formspree
-  const subject=encodeURIComponent("Supa Oldies — Register to Play");
-  const body=encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nPlay as: ${playAs}`);
-  const mailtoLink=`mailto:email@andytwomey.com?subject=${subject}&body=${body}`;
-  window.location.href=mailtoLink;
-  // Show success regardless
-  document.getElementById("register-form-view").style.display="none";
-  document.getElementById("register-success-view").style.display="block";
+  btn.textContent="Sending...";
+  btn.disabled=true;
+  fetch("https://formspree.io/f/xojrqlvd",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Accept":"application/json"},
+    body:JSON.stringify({name,email,phone,play_as:playAs})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.ok){
+      document.getElementById("register-form-view").style.display="none";
+      document.getElementById("register-success-view").style.display="block";
+    } else {
+      errEl.textContent=(data.errors&&data.errors[0]&&data.errors[0].message)||"Something went wrong. Please try again.";
+      errEl.style.display="block";
+    }
+  })
+  .catch(function(){
+    errEl.textContent="Network error — please check your connection and try again.";
+    errEl.style.display="block";
+  })
+  .finally(function(){
+    btn.textContent="Submit Registration";
+    btn.disabled=false;
+  });
 };
 setLoading(true);
 </script>
