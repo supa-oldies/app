@@ -671,7 +671,8 @@ body{background:#f8f8fa;color:var(--foreground);font-family:'Inter',sans-serif;f
           <h4>Share links</h4>
           <p>The <strong>🔗 Share</strong> button (bottom-right of the public site) copies a URL that links directly to the current division and tab — e.g. <code>?div=prem&tab=table</code>. Share it with players so they land in the right place.</p>
           <h4>Register to play</h4>
-          <p>The <strong>Register to Play</strong> button in the header opens a form for prospective players to submit their name, email, phone and how they want to play (Individual / Team / Both). On submit it opens the user's email client pre-addressed to the league contact.</p>
+          <p>The <strong>Register to Play</strong> button in the header opens a form collecting name, email, phone and play preference (Individual / Team / Both). On submit, the data is sent directly to the league contact email via <strong>Formspree</strong> — no email client or backend needed. The user sees a confirmation screen once submitted successfully.</p>
+          <div class="help-tip"><strong>Formspree is already configured</strong> with endpoint <code>xojrqlvd</code> pointing to the league contact email. No further setup is needed. Free tier covers 50 submissions per month — upgrade at <strong>formspree.io</strong> if volume increases.</div>
           <h4>Weather banner</h4>
           <p>Set from the <strong>Weather</strong> tab in admin. Appears as a yellow bar at the very top of the public site. Visible to all visitors until cleared.</p>
           <h4>URLs</h4>
